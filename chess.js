@@ -180,6 +180,11 @@ class ChessUI {
 
     if (isValidMove) {
       try {
+        // Check for potential draw by threefold repetition before executing the move
+        if (this.chessGame.drawByRepetition === true) {
+          alert('Draw by 3-fold repetition!')
+          return
+        }
         // Check for en-passant
         if (
           this.chessGame.enPassantTarget &&
@@ -197,17 +202,6 @@ class ChessUI {
         console.log(error)
         this.deselectPiece() // Deselect the piece
       }
-      const kingPosition = this.chessGame.findPiecePosition(
-        'K',
-        this.chessGame.currentPlayerTurn,
-      )
-      // console.log(kingPosition)
-      // console.log(this.chessGame.isSquareAttacked(kingPosition))
-      // console.log(!this.chessGame.isSquareAttacked([7, 6]))
-      // this.chessGame.isStalemate()
-      // console.log(this.chessGame.isCheckmate())
-
-      // console.log(this.chessGame.isDrawByInsufficientMaterial())
     } else {
       this.deselectPiece()
     }

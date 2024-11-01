@@ -8,6 +8,10 @@ class ChessGame {
     this.currentPlayerTurn = playerTurn
     this.board = this.initializeBoard(board)
     this.enPassantTarget = null // Initialize en-passant target
+    this.moveHistory = [] // To track board position history
+    this.drawByRepetition = false // To track if a draw by repetition occurred
+
+    this.repetitionCountTwoTracker = 0
 
     // Use an object to encapsulate the state of various pieces
     this.pieceMovedStatus = {
@@ -472,6 +476,14 @@ class ChessGame {
       throw new Error('Invalid move!')
     }
 
+    const boardState = this.getBoardState()
+    this.moveHistory.push(boardState) // Store the current board state in history
+
+    // Count occurrences of the current board state
+    const repetitionCount = this.moveHistory.filter(
+      (state) => state === boardState,
+    ).length
+
     // Move the piece
     this.setPiece(end[0], end[1], piece)
     this.removePiece(start[0], start[1])
@@ -514,8 +526,23 @@ class ChessGame {
       this.showPawnPromotionPrompt(end) // Handle promotion in a loop
     }
 
+    // Check for 3-fold repetition
+    // Check for repetitionCount being 2 and track it
+    if (repetitionCount === 2) {
+      this.repetitionCountTwoTracker++ // Increment the counter
+    }
+    // Check for repetitionCount === 2 get's 4th time
+    if (this.repetitionCountTwoTracker === 4) {
+      this.drawByRepetition = true // Mark draw by repetition
+      this.repetitionCountTwoTracker = 0 // Reset the tracker if needed
+    }
+
     // Switch turn
     this.switchTurn()
+  }
+
+  getBoardState() {
+    return this.board.map((row) => row.join(',')).join('|') // Create a unique state string for the board
   }
 
   showPawnPromotionPrompt(position) {
@@ -766,5 +793,8 @@ class ChessGame {
 // 2n/1P/4k3/1p3p2/7p/P1P2P1K/4p/3N w - - 0 41 - pawn promotion position
 // r3kbnr/pppppppp/8/2q/8/8/PPPP2PP/RNBQK2R w KQkq - 0 1 - castling position
 
-const initialFEN = 'r3kbnr/pppppppp/8/2q2r/8/8/PPPP2PP/RNBQK2R w KQkq - 0 1'
+// https://lichess.org/3KkqKLdO#66 3-fold rep testing
+// https://lichess.org/games/search?perf=6&mode=1&durationMin=600&durationMax=600&status=34&dateMin=2024-10-28&dateMax=2024-10-29&sort.field=d&sort.order=desc#results
+
+const initialFEN = '6k1/5pp1/2R4p/1PR5/8/6P1/1PPr1r1P/6K1 b - - 0 28'
 export const chess = new ChessGame(initialFEN)
