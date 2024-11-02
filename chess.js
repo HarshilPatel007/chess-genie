@@ -20,6 +20,7 @@ class ChessUI {
       n: 'bN',
       p: 'bP',
     }
+    this.gameOver = false // Track if the game is over
     this.initializeBoard()
   }
 
@@ -154,7 +155,7 @@ class ChessUI {
   }
 
   movePiece(row, column) {
-    if (!this.selectedPiece) return // No piece selected
+    if (!this.selectedPiece || this.gameOver) return // No piece selected or game is over
 
     const [startX, startY] = this.selectedPiece
 
@@ -180,9 +181,13 @@ class ChessUI {
 
     if (isValidMove) {
       try {
-        // Check for potential draw by threefold repetition before executing the move
-        if (this.chessGame.drawByRepetition === true) {
-          alert('Draw by 3-fold repetition!')
+        // Check for draw by threefold repetition before executing the move
+        if (this.chessGame.isDrawByRepetition === true) {
+          // Use setTimeout to delay the alert
+          setTimeout(() => {
+            alert('Draw by 3-fold repetition!')
+          }, 350) // 1000 milliseconds = 1 seconds
+          this.gameOver = true // Mark the game as over
           return
         }
         // Check for en-passant
@@ -197,6 +202,39 @@ class ChessUI {
           this.chessGame.board[capturedRow][capturedCol] = null
         }
         this.executeMove(startX, startY, row, column)
+
+        // Check for checkmate after the move
+        if (this.chessGame.isCheckmate()) {
+          // Use setTimeout to delay the alert
+          setTimeout(() => {
+            alert(
+              `${
+                this.chessGame.currentPlayerTurn === 'w' ? 'Black' : 'White'
+              } wins by checkmate!`,
+            )
+          }, 350) // 1000 milliseconds = 1 seconds
+          this.gameOver = true // Mark the game as over
+          return
+        }
+
+        // Check for stalemate after the move
+        if (this.chessGame.isStalemate()) {
+          // Use setTimeout to delay the alert
+          setTimeout(() => {
+            alert('Draw by Stalemate!')
+          }, 350) // 1000 milliseconds = 1 seconds
+          this.gameOver = true // Mark the game as over
+          return
+        }
+        // Check for insufficient material after the move
+        if (this.chessGame.isDrawByInsufficientMaterial()) {
+          // Use setTimeout to delay the alert
+          setTimeout(() => {
+            alert('Draw by insufficient material!')
+          }, 350) // 1000 milliseconds = 1 seconds
+          this.gameOver = true // Mark the game as over
+          return
+        }
       } catch (error) {
         alert(error.message) // Notify user about the invalid move
         console.log(error)
