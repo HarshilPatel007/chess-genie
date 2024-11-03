@@ -542,8 +542,50 @@ class ChessGame {
     // Check for 3-fold repetition
     this.checkThreeFoldRepetition(boardState)
 
+    // // Generate SAN and log it
+    // const san = this.getSAN(start, end)
+    // console.log(`Move made: ${san}`)
+
     // Switch turn
     this.switchTurn()
+  }
+  static pieceToSAN = {
+    [PIECE_TYPES.KING]: 'K',
+    [PIECE_TYPES.QUEEN]: 'Q',
+    [PIECE_TYPES.ROOK]: 'R',
+    [PIECE_TYPES.BISHOP]: 'B',
+    [PIECE_TYPES.KNIGHT]: 'N',
+    [PIECE_TYPES.PAWN]: '',
+  }
+  static fileNames = 'abcdefgh'
+  getSAN(start, end) {
+    const movedPiece = this.getPiece(start[0], start[1])
+    const targetPiece = this.getPiece(end[0], end[1])
+
+    if (movedPiece === null || targetPiece === null) return ''
+
+    // Get the SAN for the piece
+    const pieceIdentifier = ChessGame.pieceToSAN[movedPiece.toUpperCase()]
+
+    // Determine the move type (normal, capture, check, checkmate, etc.)
+    let sanMove
+
+    // If a piece is captured
+    if (targetPiece !== null) {
+      sanMove = `${pieceIdentifier}${ChessGame.fileNames[end[1]]}x`
+    } else {
+      sanMove = `${pieceIdentifier}${ChessGame.fileNames[end[1]]}`
+    }
+
+    // Append check or checkmate indication
+    if (this.isSquareAttacked(end)) {
+      sanMove += '+'
+    }
+    if (this.isCheckmate()) {
+      sanMove += '#'
+    }
+
+    return sanMove
   }
 
   trackPieceMovement(piece, playerColor, start) {
@@ -640,63 +682,91 @@ class ChessGame {
     }
   }
 
-  canKingMove(kingPosition) {
-    // Check if king can move to a safe square
+  isCheckmate() {
+    const kingPosition = this.findPiecePosition(
+      PIECE_TYPES.KING,
+      this.currentPlayerTurn,
+    )
+
+    // If the king isn't in check, it can't be checkmate
+    if (!this.isSquareAttacked(kingPosition)) return false
+
+    // Check if the king has any escape moves
+    if (this.kingHasEscapeMoves(kingPosition)) return false
+
+    // Check if any piece can block the check
+    if (this.isPieceCanBlockCheck(kingPosition)) return false
+
+    // If no valid moves can protect the king and the king can't move, it's checkmate
+    return true
+  }
+
+  kingHasEscapeMoves(kingPosition) {
     const [kingX, kingY] = kingPosition
+
     for (let x = kingX - 1; x <= kingX + 1; x++) {
       for (let y = kingY - 1; y <= kingY + 1; y++) {
-        if (x >= 0 && x < 8 && y >= 0 && y < 8) {
-          if (this.isValidKingMove(kingPosition, [x, y])) {
-            const targetPiece = this.getPiece(x, y)
-            if (
-              targetPiece === null || // Target square is empty
-              (targetPiece !== null &&
-                this.getPieceColor(targetPiece) !== this.currentPlayerTurn)
-            ) {
-              // Check if the king moves to this square does not lead to check
-              const originalPiece = this.getPiece(kingX, kingY) // Store original piece
-              this.removePiece(kingX, kingY) // Move king temporarily
-              this.setPiece(x, y, PIECE_TYPES.KING) // Place king on new square
-
-              const isStillSafe = !this.isSquareAttacked([x, y])
-
-              // Move the king back to original position
-              this.setPiece(x, y, targetPiece) // Restore target square piece
-              this.setPiece(kingX, kingY, originalPiece) // Restore king's original position
-
-              if (isStillSafe) {
-                return false // The king has a safe escape move
-              }
+        if (
+          this.isOnBoard([x, y]) &&
+          this.isValidKingMove(kingPosition, [x, y])
+        ) {
+          const targetPiece = this.getPiece(x, y)
+          if (
+            targetPiece === null ||
+            this.getPieceColor(targetPiece) !== this.currentPlayerTurn
+          ) {
+            // Check if the king moving to this square does not lead to check
+            if (this.canMoveSafely(kingPosition, [x, y])) {
+              return true // Escape move found
             }
           }
         }
       }
     }
+
+    return false // No escape moves available
   }
 
-  canBlockCheck(kingPosition) {
-    // Check if any piece can block the check
+  canMoveSafely(start, end) {
+    const originalPiece = this.getPiece(start[0], start[1])
+    const targetPiece = this.getPiece(end[0], end[1])
+
+    // Temporarily make the move
+    this.setPiece(end[0], end[1], originalPiece)
+    this.removePiece(start[0], start[1])
+
+    const isStillSafe = !this.isSquareAttacked(end)
+
+    // Undo the temporary move
+    this.removePiece(end[0], end[1])
+    this.setPiece(start[0], start[1], originalPiece)
+
+    if (targetPiece) {
+      this.setPiece(end[0], end[1], targetPiece) // Restore target piece
+    }
+
+    return isStillSafe
+  }
+
+  isPieceCanBlockCheck(kingPosition) {
     for (let x = 0; x < 8; x++) {
       for (let y = 0; y < 8; y++) {
         const piece = this.getPiece(x, y)
-        if (
-          piece !== null &&
-          this.getPieceColor(piece) === this.currentPlayerTurn
-        ) {
+        if (piece && this.getPieceColor(piece) === this.currentPlayerTurn) {
           const validMoves = this.getValidMoves([x, y])
 
           for (const move of validMoves) {
             // Temporarily make this move
-            const originalTargetPiece = this.getPiece(move[0], move[1]) // Store the target piece
-            this.setPiece(move[0], move[1], piece) // Move the piece to the new location
-            this.removePiece(x, y) // Remove piece from original location
+            const originalTargetPiece = this.getPiece(move[0], move[1])
+            this.setPiece(move[0], move[1], piece)
+            this.removePiece(x, y)
 
             if (!this.isSquareAttacked(kingPosition)) {
+              // Move was deemed valid for blocking the check
               // Restore the board
               this.setPiece(x, y, piece) // Move the piece back
               this.setPiece(move[0], move[1], originalTargetPiece) // Restore target piece
-
-              return false // There is a valid move that can block the check
+              return true // Block found
             }
 
             // Restore the board
@@ -706,24 +776,7 @@ class ChessGame {
         }
       }
     }
-  }
-
-  isCheckmate() {
-    const kingPosition = this.findPiecePosition(
-      PIECE_TYPES.KING,
-      this.currentPlayerTurn,
-    )
-
-    // If the king isn't in check, it can't be checkmate
-    if (!this.isSquareAttacked(kingPosition)) {
-      return false
-    }
-
-    this.canKingMove(kingPosition)
-    this.canBlockCheck(kingPosition)
-
-    // If no valid moves can protect the king and the king can't move, it's checkmate
-    return true
+    return false // No blocking moves available
   }
 
   isStalemate() {
