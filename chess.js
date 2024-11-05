@@ -190,6 +190,16 @@ class ChessUI {
           this.gameOver = true // Mark the game as over
           return
         }
+
+        // Check if move leads to a draw by the fifty-move rule
+        if (this.chessGame.isDrawByFiftyMoveRule()) {
+          // Use setTimeout to delay the alert
+          setTimeout(() => {
+            alert('Draw by the fifty-move rule!')
+          }, 350) // 1000 milliseconds = 1 seconds
+          this.gameOver = true // Mark the game as over
+          return
+        }
         // Check for en-passant
         if (
           this.chessGame.enPassantTarget &&
@@ -226,7 +236,7 @@ class ChessUI {
           this.gameOver = true // Mark the game as over
           return
         }
-        
+
         // Check for insufficient material after the move
         if (this.chessGame.isDrawByInsufficientMaterial()) {
           // Use setTimeout to delay the alert

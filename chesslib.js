@@ -20,6 +20,7 @@ class ChessGame {
     this.boardHistory = [] // To track board position history
     this.isDrawByRepetition = false // To track if a draw by repetition occurred
     this.repetitionCountTwoTracker = 0
+    this.fiftyMoveCounter = 0 // Initialize fifty-move counter
 
     // Use an object to encapsulate the state of various pieces
     this.pieceMovedStatus = {
@@ -213,7 +214,7 @@ class ChessGame {
     )
   }
 
-  findPiecePosition(pieceName, playerColor) {
+  getPiecePosition(pieceName, playerColor) {
     const piece =
       playerColor === WHITE ? pieceName.toUpperCase() : pieceName.toLowerCase()
     for (let x = 0; x < 8; x++) {
@@ -309,7 +310,7 @@ class ChessGame {
 
   castle(start, end) {
     // Check if King is in check before allowing castling
-    const kingPosition = this.findPiecePosition(
+    const kingPosition = this.getPiecePosition(
       PIECE_TYPES.KING,
       this.currentPlayerTurn,
     )
@@ -449,7 +450,7 @@ class ChessGame {
     this.setPiece(end[0], end[1], originalPiece)
     this.removePiece(start[0], start[1])
 
-    const kingPosition = this.findPiecePosition(
+    const kingPosition = this.getPiecePosition(
       PIECE_TYPES.KING,
       this.currentPlayerTurn,
     )
@@ -522,6 +523,17 @@ class ChessGame {
       throw new Error('Invalid move!')
     }
 
+    // Track if the move involved a pawn or capture
+    if (
+      piece.toLowerCase() === PIECE_TYPES.PAWN.toLowerCase() ||
+      piece.toUpperCase() === PIECE_TYPES.PAWN.toUpperCase() ||
+      this.getPiece(end[0], end[1]) !== null
+    ) {
+      this.fiftyMoveCounter = 0 // Reset counter on pawn move or capture
+    } else {
+      this.fiftyMoveCounter++ // Increment counter otherwise
+    }
+
     const boardState = this.getBoardState()
     this.boardHistory.push(boardState) // Store the current board state in history
 
@@ -544,6 +556,14 @@ class ChessGame {
 
     // Switch turn
     this.switchTurn()
+  }
+
+  // check if fifty-move rule applies
+  isDrawByFiftyMoveRule() {
+    if (this.fiftyMoveCounter >= 100) {
+      return true // Draw by the fifty-move rule
+    }
+    return false // Not yet eligible for fifty-move draw
   }
 
   trackPieceMovement(piece, playerColor, start) {
@@ -641,7 +661,7 @@ class ChessGame {
   }
 
   isCheckmate() {
-    const kingPosition = this.findPiecePosition(
+    const kingPosition = this.getPiecePosition(
       PIECE_TYPES.KING,
       this.currentPlayerTurn,
     )
@@ -738,7 +758,7 @@ class ChessGame {
   }
 
   isStalemate() {
-    const kingPosition = this.findPiecePosition(
+    const kingPosition = this.getPiecePosition(
       PIECE_TYPES.KING,
       this.currentPlayerTurn,
     )
@@ -906,5 +926,5 @@ class ChessGame {
 // https://lichess.org/3KkqKLdO#66 3-fold rep testing
 // https://lichess.org/games/search?perf=6&mode=1&durationMin=600&durationMax=600&status=34&dateMin=2024-10-28&dateMax=2024-10-29&sort.field=d&sort.order=desc#results
 
-const initialFEN = '5Bnk/1B/6K1/8/8/8/8/8 w - - 0 1'
+const initialFEN = '7k/1B2B/6K1/2p3P/8/8/8/8 w - - 0 1'
 export const chess = new ChessGame(initialFEN)
