@@ -542,50 +542,8 @@ class ChessGame {
     // Check for 3-fold repetition
     this.checkThreeFoldRepetition(boardState)
 
-    // // Generate SAN and log it
-    // const san = this.getSAN(start, end)
-    // console.log(`Move made: ${san}`)
-
     // Switch turn
     this.switchTurn()
-  }
-  static pieceToSAN = {
-    [PIECE_TYPES.KING]: 'K',
-    [PIECE_TYPES.QUEEN]: 'Q',
-    [PIECE_TYPES.ROOK]: 'R',
-    [PIECE_TYPES.BISHOP]: 'B',
-    [PIECE_TYPES.KNIGHT]: 'N',
-    [PIECE_TYPES.PAWN]: '',
-  }
-  static fileNames = 'abcdefgh'
-  getSAN(start, end) {
-    const movedPiece = this.getPiece(start[0], start[1])
-    const targetPiece = this.getPiece(end[0], end[1])
-
-    if (movedPiece === null || targetPiece === null) return ''
-
-    // Get the SAN for the piece
-    const pieceIdentifier = ChessGame.pieceToSAN[movedPiece.toUpperCase()]
-
-    // Determine the move type (normal, capture, check, checkmate, etc.)
-    let sanMove
-
-    // If a piece is captured
-    if (targetPiece !== null) {
-      sanMove = `${pieceIdentifier}${ChessGame.fileNames[end[1]]}x`
-    } else {
-      sanMove = `${pieceIdentifier}${ChessGame.fileNames[end[1]]}`
-    }
-
-    // Append check or checkmate indication
-    if (this.isSquareAttacked(end)) {
-      sanMove += '+'
-    }
-    if (this.isCheckmate()) {
-      sanMove += '#'
-    }
-
-    return sanMove
   }
 
   trackPieceMovement(piece, playerColor, start) {
@@ -823,88 +781,105 @@ class ChessGame {
   }
 
   isDrawByInsufficientMaterial() {
-    // king vs king.
-    // king and bishop vs king.
-    // king and knight vs king.
-    // king and bishop vs king and bishop with the bishops on the same color.
+    const pieceCounts = this.countPieces()
+    return this.checkInsufficientMaterial(pieceCounts)
+  }
 
-    let whitePieces = 0
-    let blackPieces = 0
-    let whiteBishops = 0
-    let blackBishops = 0
+  countPieces() {
+    // Initialize counts for both colors
+    const counts = {
+      white: { total: 0, bishops: 0, knights: 0, rooks: 0, pawns: 0, king: 1 },
+      black: { total: 0, bishops: 0, knights: 0, rooks: 0, pawns: 0, king: 1 },
+    }
+
+    const pieceTypeMap = {
+      [PIECE_TYPES.BISHOP.toUpperCase()]: 'bishops',
+      [PIECE_TYPES.KNIGHT.toUpperCase()]: 'knights',
+      [PIECE_TYPES.ROOK.toUpperCase()]: 'rooks',
+      [PIECE_TYPES.PAWN.toUpperCase()]: 'pawns',
+      [PIECE_TYPES.BISHOP.toLowerCase()]: 'bishops',
+      [PIECE_TYPES.KNIGHT.toLowerCase()]: 'knights',
+      [PIECE_TYPES.ROOK.toLowerCase()]: 'rooks',
+      [PIECE_TYPES.PAWN.toLowerCase()]: 'pawns',
+    }
 
     for (let x = 0; x < 8; x++) {
       for (let y = 0; y < 8; y++) {
         const piece = this.getPiece(x, y)
         if (!piece) continue // Skip empty squares
 
-        const isWhite = piece === piece.toUpperCase()
-        if (isWhite) {
-          whitePieces++
-          if (piece === PIECE_TYPES.BISHOP) {
-            whiteBishops++
-          }
-        } else {
-          blackPieces++
-          if (piece === PIECE_TYPES.BISHOP.toLowerCase()) {
-            blackBishops++
-          }
+        const color = piece === piece.toUpperCase() ? 'white' : 'black'
+        counts[color].total++
+
+        // Determine the piece type
+        const capitalizedPiece =
+          piece === piece.toUpperCase() ? piece : piece.toLowerCase()
+        const pieceType = pieceTypeMap[capitalizedPiece]
+        if (pieceType) {
+          counts[color][pieceType]++
         }
       }
     }
 
-    return this.checkInsufficientMaterial(
-      whitePieces,
-      blackPieces,
-      whiteBishops,
-      blackBishops,
-    )
+    return counts // Return the piece counts for both colors
   }
 
-  checkInsufficientMaterial(
-    whitePieces,
-    blackPieces,
-    whiteBishops,
-    blackBishops,
-  ) {
-    // Check basic king vs king.
-    if (whitePieces === 1 && blackPieces === 1) return true // King vs King
+  checkInsufficientMaterial(pieceCounts) {
+    const { white, black } = pieceCounts
 
-    const isKingVsKingWithMinorPiece = (kingPieces, minorPieces) => {
-      return (
-        kingPieces === 1 &&
-        (minorPieces === 2 || (minorPieces === 3 && blackBishops === 0))
-      )
-    }
+    // king vs king
+    const isKingVsKing =
+      white.king === 1 &&
+      black.king === 1 &&
+      white.total === 1 &&
+      black.total === 1
 
-    // Check king vs (king + bishop or knight)
-    if (
-      isKingVsKingWithMinorPiece(whitePieces, blackPieces) ||
-      isKingVsKingWithMinorPiece(blackPieces, whitePieces)
+    // king vs king + bishop
+    // king vs king + knight
+    const isKingVsMinorPiece = (piece) =>
+      (white.king === 1 &&
+        black.king === 1 &&
+        white.total === 1 &&
+        black[piece] === 1 &&
+        black.total === 2) ||
+      (black.king === 1 &&
+        white.king === 1 &&
+        black.total === 1 &&
+        white[piece] === 1 &&
+        white.total === 2)
+
+    // king + bishop vs king + bishop
+    // king + knight vs king + knight
+    // king + bishop vs king + knight
+    const isKingMinorPieceVsKingMinorPiece = (piece) =>
+      (white.king === 1 &&
+        black.king === 1 &&
+        white[piece] === 1 &&
+        black[piece] === 1 &&
+        white.total === 2 &&
+        black.total === 2) ||
+      // king + bishop vs king + knight
+      (white.king === 1 &&
+        black.king === 1 &&
+        white.bishops === 1 &&
+        black.knights === 1 &&
+        white.total === 2 &&
+        black.total === 2) ||
+      (black.king === 1 &&
+        white.king === 1 &&
+        black.bishops === 1 &&
+        white.knights === 1 &&
+        black.total === 2 &&
+        white.total === 2)
+
+    return (
+      isKingVsKing ||
+      isKingVsMinorPiece('bishops') ||
+      isKingVsMinorPiece('knights') ||
+      isKingMinorPieceVsKingMinorPiece('bishops') ||
+      isKingMinorPieceVsKingMinorPiece('knights') ||
+      false
     )
-      return true
-
-    // Check for the same color bishops
-    if (whiteBishops > 0 && blackBishops > 0) {
-      if (whiteBishops === 1 && blackBishops === 1) {
-        const whiteBishopPosition = this.findPiecePosition(
-          PIECE_TYPES.BISHOP,
-          WHITE,
-        )
-        const blackBishopPosition = this.findPiecePosition(
-          PIECE_TYPES.BISHOP.toLowerCase(),
-          BLACK,
-        )
-        if (
-          (whiteBishopPosition[0] + whiteBishopPosition[1]) % 2 ===
-          (blackBishopPosition[0] + blackBishopPosition[1]) % 2
-        ) {
-          return true // Both bishops on the same color
-        }
-      }
-    }
-
-    return false // There is sufficient material to continue playing
   }
 
   // Simple representation of the board
@@ -931,5 +906,5 @@ class ChessGame {
 // https://lichess.org/3KkqKLdO#66 3-fold rep testing
 // https://lichess.org/games/search?perf=6&mode=1&durationMin=600&durationMax=600&status=34&dateMin=2024-10-28&dateMax=2024-10-29&sort.field=d&sort.order=desc#results
 
-const initialFEN = '5Bnk/8/6K1/8/8/8/8/8 w - - 0 1'
+const initialFEN = '5Bnk/1B/6K1/8/8/8/8/8 w - - 0 1'
 export const chess = new ChessGame(initialFEN)

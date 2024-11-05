@@ -226,6 +226,7 @@ class ChessUI {
           this.gameOver = true // Mark the game as over
           return
         }
+        
         // Check for insufficient material after the move
         if (this.chessGame.isDrawByInsufficientMaterial()) {
           // Use setTimeout to delay the alert
