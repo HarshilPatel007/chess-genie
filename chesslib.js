@@ -323,7 +323,8 @@ class ChessGame {
     const kingInitialPosition = [row, 4]
     const rookInitialPosition =
       castlingType === 'kingside' ? [row, 7] : [row, 0]
-    const kingNewPosition = castlingType === 'kingside' ? [row, 6] : [row, 2]
+    const kingNewPosition1 = castlingType === 'kingside' ? [row, 6] : [row, 2] // final square
+    const kingNewPosition2 = castlingType === 'kingside' ? [row, 5] : [row, 3] // square besides the king
     const rookNewPosition = castlingType === 'kingside' ? [row, 5] : [row, 3]
 
     const king = this.getPiece(...kingInitialPosition)
@@ -333,17 +334,27 @@ class ChessGame {
     if (!this.canCastleKingside() && castlingType === 'kingside') return
     if (!this.canCastleQueenside() && castlingType === 'queenside') return
 
-    const kingSafe = this.performTemporaryMovesAndCheckSafety(
+    const isKingSafe1 = this.performTemporaryMovesAndCheckSafety(
       king,
       rook,
       kingInitialPosition,
       rookInitialPosition,
-      kingNewPosition,
+      kingNewPosition1,
+      rookNewPosition,
+    )
+
+    const isKingSafe2 = this.performTemporaryMovesAndCheckSafety(
+      king,
+      rook,
+      kingInitialPosition,
+      rookInitialPosition,
+      kingNewPosition2,
       rookNewPosition,
     )
 
     // If the King's new position is not safe, abort castling
-    if (!kingSafe) return
+    if (!isKingSafe1) return
+    if (!isKingSafe2) return
 
     // Proceed with the final castling move
     this.finalizeCastling(
@@ -352,7 +363,7 @@ class ChessGame {
       rook,
       kingInitialPosition,
       rookInitialPosition,
-      kingNewPosition,
+      kingNewPosition1,
       rookNewPosition,
     )
   }
@@ -368,7 +379,7 @@ class ChessGame {
     // Temporarily move pieces to validate the castling path
     this.setPiece(...kingNewPosition, king) // Move King to new position
     this.setPiece(...rookNewPosition, rook) // Move Rook to new position
-    this.removePiece(...kingInitialPosition) // Remove King from e1/e8
+    this.removePiece(...kingInitialPosition) // Remove King from its initial position
     this.removePiece(...rookInitialPosition) // Remove Rook from its initial position
 
     const kingSafe = !this.isSquareAttacked(kingNewPosition)
@@ -926,5 +937,5 @@ class ChessGame {
 // https://lichess.org/3KkqKLdO#66 3-fold rep testing
 // https://lichess.org/games/search?perf=6&mode=1&durationMin=600&durationMax=600&status=34&dateMin=2024-10-28&dateMax=2024-10-29&sort.field=d&sort.order=desc#results
 
-const initialFEN = '7k/1B2B/6K1/2p3P/8/8/8/8 w - - 0 1'
+const initialFEN = 'r3kbnr/pppppppp/8/2q2r/8/8/PPPP2PP/RNBQK2R w KQkq - 0 1'
 export const chess = new ChessGame(initialFEN)
