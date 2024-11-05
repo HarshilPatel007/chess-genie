@@ -1,4 +1,5 @@
 //chess.js
+
 import { chess } from './chesslib.js'
 
 class ChessUI {
@@ -21,11 +22,23 @@ class ChessUI {
       p: 'bP',
     }
     this.gameOver = false // Track if the game is over
+    this.isFlipped = false // Track if the board is flipped
     this.initializeBoard()
+    this.createFlipButton() // Create the button to flip the board
   }
 
   initializeBoard() {
     this.renderBoard()
+  }
+
+  createFlipButton() {
+    const flipButton = document.createElement('button')
+    flipButton.textContent = 'Flip Board'
+    flipButton.addEventListener('click', () => {
+      this.isFlipped = !this.isFlipped
+      this.renderBoard() // Re-render the board to reflect the new orientation
+    })
+    document.body.appendChild(flipButton) // Append the button to the body or any other container
   }
 
   renderBoard() {
@@ -33,7 +46,9 @@ class ChessUI {
 
     for (let row = 0; row < 8; row++) {
       for (let column = 0; column < 8; column++) {
-        this.createSquare(row, column)
+        const renderedRow = this.isFlipped ? 7 - row : row
+        const renderedColumn = this.isFlipped ? 7 - column : column
+        this.createSquare(renderedRow, renderedColumn)
       }
     }
   }
