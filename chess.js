@@ -1,6 +1,7 @@
 //chess.js
 
 import { chess } from './chesslib.js'
+import { PlayStockfish } from './playstockfish.js'
 
 class ChessUI {
   constructor(chessGame) {
@@ -23,6 +24,8 @@ class ChessUI {
     }
     this.gameOver = false // Track if the game is over
     this.isFlipped = false // Track if the board is flipped
+    this.isBotGame = false // Track if it's a bot game
+    this.stockfishAI = null // Placeholder for the Stockfish AI
     this.initializeBoard()
     this.flipChessboard()
 
@@ -45,6 +48,7 @@ class ChessUI {
         .getElementById('playerVsPlayer')
         .addEventListener('click', () => {
           this.startPlayerVsPlayerGame()
+          this.isBotGame = false // Player vs Player
           gameModeModal.hide()
         })
 
@@ -52,6 +56,7 @@ class ChessUI {
         .getElementById('playerVsBotWhite')
         .addEventListener('click', () => {
           this.startPlayerVsBotGame('w')
+          this.isBotGame = true // Player vs Stockfish (White)
           gameModeModal.hide()
         })
 
@@ -59,6 +64,7 @@ class ChessUI {
         .getElementById('playerVsBotBlack')
         .addEventListener('click', () => {
           this.startPlayerVsBotGame('b')
+          this.isBotGame = true // Stockfish (Black)
           gameModeModal.hide()
         })
     })
@@ -68,6 +74,22 @@ class ChessUI {
     this.isBotGame = false // Set to false for player vs player
     console.log('Starting Player vs Player Game...')
     // Additional logic to reset board and start the game can go here.
+  }
+
+  // Update the existing startPlayerVsBotGame method
+  startPlayerVsBotGame(playerColor) {
+    console.log(`Starting Player vs Bot Game... Player: ${playerColor}`)
+    this.stockfishAI = new PlayStockfish(this.chessGame, this) // Pass the ChessUI instance
+    if (playerColor === 'b') {
+      this.stockfishAI.requestStockfishMove() // If the player is black, request the first move for Stockfish.
+    }
+  }
+
+  // Method called after player's move to request Stockfish's move
+  afterPlayerMove() {
+    if (this.isBotGame && this.chessGame.currentPlayerTurn === 'b') {
+      this.stockfishAI.onPlayerMove(this.gameOver)
+    }
   }
 
   flipChessboard() {
@@ -262,6 +284,8 @@ class ChessUI {
           this.chessGame.board[capturedRow][capturedCol] = null
         }
         this.executeMove(startX, startY, row, column)
+
+        this.afterPlayerMove() // Request Stockfish move if it's a bot game
 
         // Check for checkmate after the move
         if (this.chessGame.isCheckmate()) {

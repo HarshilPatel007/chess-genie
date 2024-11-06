@@ -1,8 +1,9 @@
 // playstockfish.js
 
 export class PlayStockfish {
-  constructor(chessGame) {
+  constructor(chessGame, chessUI) {
     this.chessGame = chessGame
+    this.chessUI = chessUI
     this.stockfish = new Worker('./stockfish/stockfish-16.1-lite-single.js')
 
     this.initializeStockfish()
@@ -33,6 +34,7 @@ export class PlayStockfish {
 
     try {
       this.chessGame.makeMove(start, end)
+      this.chessUI.renderBoard() // Refresh the board after Stockfish's move
     } catch (error) {
       console.error(error) // Log the error to the console if move is invalid
     }
