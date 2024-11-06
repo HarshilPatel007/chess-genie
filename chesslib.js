@@ -526,13 +526,13 @@ class ChessGame {
     const pieceColor = this.getPieceColor(piece)
     const playerColor = this.currentPlayerTurn === WHITE ? 'white' : 'black'
 
-    if (pieceColor !== this.currentPlayerTurn) {
-      throw new Error("It's not your turn!")
-    }
+    // if (pieceColor !== this.currentPlayerTurn) {
+    //   throw new Error("It's not your turn!")
+    // }
 
-    if (!this.validatePieceMove(piece, start, end)) {
-      throw new Error('Invalid move!')
-    }
+    // if (!this.validatePieceMove(piece, start, end)) {
+    //   throw new Error('Invalid move!')
+    // }
 
     // Track if the move involved a pawn or capture
     if (
@@ -567,6 +567,8 @@ class ChessGame {
 
     // Switch turn
     this.switchTurn()
+
+    console.log(this.getFEN())
   }
 
   // check if fifty-move rule applies
@@ -622,6 +624,79 @@ class ChessGame {
 
   getBoardState() {
     return this.board.map((row) => row.join(',')).join('|') // Create a unique state string for the board
+  }
+
+  getFEN() {
+    let fen = ''
+
+    // 1. Convert the board to FEN format
+    for (let row of this.board) {
+      let emptyCount = 0
+      for (let square of row) {
+        if (square) {
+          if (emptyCount > 0) {
+            fen += emptyCount // Add empty squares if any
+            emptyCount = 0
+          }
+          fen += square // Add the piece
+        } else {
+          emptyCount++
+        }
+      }
+      if (emptyCount > 0) {
+        fen += emptyCount // Add remaining empty squares if at the end of the row
+      }
+      fen += '/' // Move to the next rank
+    }
+
+    // Remove the last slash
+    fen = fen.slice(0, -1)
+
+    // 2. Active color
+    fen += ` ${this.currentPlayerTurn === WHITE ? 'w' : 'b'}`
+
+    // 3. Castling rights
+    const castlingRights = []
+    if (
+      !this.pieceMovedStatus.whiteKing &&
+      !this.pieceMovedStatus.whiteKingsideRook
+    ) {
+      castlingRights.push('K') // White can castle kingside
+    }
+    if (
+      !this.pieceMovedStatus.whiteKing &&
+      !this.pieceMovedStatus.whiteQueensideRook
+    ) {
+      castlingRights.push('Q') // White can castle queenside
+    }
+    if (
+      !this.pieceMovedStatus.blackKing &&
+      !this.pieceMovedStatus.blackKingsideRook
+    ) {
+      castlingRights.push('k') // Black can castle kingside
+    }
+    if (
+      !this.pieceMovedStatus.blackKing &&
+      !this.pieceMovedStatus.blackQueensideRook
+    ) {
+      castlingRights.push('q') // Black can castle queenside
+    }
+    fen += ` ${castlingRights.join('') || '-'}` // Defaults to '-' if no castling rights
+
+    // 4. En passant target square
+    fen += ` ${
+      this.enPassantTarget
+        ? `${this.enPassantTarget[1]}${8 - this.enPassantTarget[0]}`
+        : '-'
+    }`
+
+    // 5. Halfmove clock (for fifty-move rule)
+    fen += ` ${this.fiftyMoveCounter}`
+
+    // 6. Fullmove number
+    fen += ` ${Math.floor(this.boardHistory.length / 2) + 1}` // Adjust full move number
+
+    return fen // Return the FEN string
   }
 
   showPawnPromotionPrompt(position) {
@@ -791,6 +866,28 @@ class ChessGame {
     }
 
     return true // No valid moves available, thus stalemate
+  }
+
+  // Method to convert move string like 'c5d5' into coordinates
+  getCoordinatesFromMove(move) {
+    if (move.length !== 4) {
+      throw new Error('Invalid move format! Move must be 4 characters long.')
+    }
+
+    const startFile = move[0] // The first letter representing the starting file
+    const startRank = move[1] // The first number representing the starting rank
+    const endFile = move[2] // The second letter representing the ending file
+    const endRank = move[3] // The second number representing the ending rank
+
+    const startX = 8 - parseInt(startRank, 10) // Convert rank to array index (0-7)
+    const startY = startFile.charCodeAt(0) - 'a'.charCodeAt(0) // Convert file from letter to index
+    const endX = 8 - parseInt(endRank, 10) // Convert rank to array index (0-7)
+    const endY = endFile.charCodeAt(0) - 'a'.charCodeAt(0) // Convert file from letter to index
+
+    return {
+      start: [startX, startY],
+      end: [endX, endY],
+    }
   }
 
   getValidMoves(position) {

@@ -1,52 +1,78 @@
+body {
+    background-color: #f8f9fa; /* Light background for the page */
+}
+
+.side-options {
+    background-color: #ffffff; /* White background for the options panel */
+    padding: 15px;
+    border-right: 1px solid #dee2e6; /* Border between options and chessboard */
+}
+
+.chessboard-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 #chessboard {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(8, 1fr);
-  border: 1px solid #333333;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    border: 1px solid #333333;
+    width: 480px; /* Set width to maintain board size */
+    height: 480px; /* Set height to maintain board size */
 }
 
 .square {
-  position: relative;
-  width: 60px;
-  height: 60px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+    position: relative;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .black {
-  background-color: #b58863;
+    background-color: #b58863;
 }
 
 .white {
-  background-color: #f0d9b5;
+    background-color: #f0d9b5;
 }
 
 .piece {
-  width: 100%;
-  height: auto;
-  cursor: pointer;
+    width: 100%;
+    height: auto;
+    cursor: pointer;
 }
 
 .highlight-circle {
-  width: 40%;
-  height: 40%;
-  border-radius: 50%;
-  background-color: rgba(42, 48, 42, 0.3);
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+    width: 40%;
+    height: 40%;
+    border-radius: 50%;
+    background-color: rgba(42, 48, 42, 0.3);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .selected-square {
-  background-color: #faca16;
+    background-color: #faca16;
 }
 
 .coords {
-  position: absolute; /* Adjust as needed */
-  color: rgba(0, 0, 0, 0.5); /* A light color for better readability */
-  font-size: 10px; /* Smaller size to differentiate from chess pieces */
-  bottom: 2px; /* Position at the bottom */
-  right: 2px; /* Position at the right */
+    position: absolute; /* Adjust as needed */
+    color: rgba(0, 0, 0, 0.5); /* A light color for better readability */
+    font-size: 10px; /* Smaller size to differentiate from chess pieces */
+    bottom: 2px; /* Position at the bottom */
+    right: 2px; /* Position at the right */
+}
+
+.move-table {
+    background-color: #ffffff; /* White background for move analysis table */
+    padding: 15px;
+    border-left: 1px solid #dee2e6; /* Border between chessboard and analysis */
+    overflow-y: auto; /* Allow vertical scrolling if necessary */
+    max-height: 500px; /* Limit height of the move table */
 }

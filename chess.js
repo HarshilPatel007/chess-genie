@@ -24,21 +24,58 @@ class ChessUI {
     this.gameOver = false // Track if the game is over
     this.isFlipped = false // Track if the board is flipped
     this.initializeBoard()
-    this.createFlipButton() // Create the button to flip the board
+    this.flipChessboard()
+
+    this.showGameModeSelection()
   }
 
   initializeBoard() {
     this.renderBoard()
   }
 
-  createFlipButton() {
-    const flipButton = document.createElement('button')
-    flipButton.textContent = 'Flip Board'
+  showGameModeSelection() {
+    const startGameButton = document.getElementById('startGame')
+    startGameButton.addEventListener('click', () => {
+      const gameModeModal = new bootstrap.Modal(
+        document.getElementById('gameModeModal'),
+      )
+      gameModeModal.show()
+
+      document
+        .getElementById('playerVsPlayer')
+        .addEventListener('click', () => {
+          this.startPlayerVsPlayerGame()
+          gameModeModal.hide()
+        })
+
+      document
+        .getElementById('playerVsBotWhite')
+        .addEventListener('click', () => {
+          this.startPlayerVsBotGame('w')
+          gameModeModal.hide()
+        })
+
+      document
+        .getElementById('playerVsBotBlack')
+        .addEventListener('click', () => {
+          this.startPlayerVsBotGame('b')
+          gameModeModal.hide()
+        })
+    })
+  }
+
+  startPlayerVsPlayerGame() {
+    this.isBotGame = false // Set to false for player vs player
+    console.log('Starting Player vs Player Game...')
+    // Additional logic to reset board and start the game can go here.
+  }
+
+  flipChessboard() {
+    const flipButton = document.getElementById('flipBoard')
     flipButton.addEventListener('click', () => {
       this.isFlipped = !this.isFlipped
-      this.renderBoard() // Re-render the board to reflect the new orientation
+      this.renderBoard()
     })
-    document.body.appendChild(flipButton) // Append the button to the body or any other container
   }
 
   renderBoard() {
@@ -198,21 +235,19 @@ class ChessUI {
       try {
         // Check for draw by threefold repetition before executing the move
         if (this.chessGame.isDrawByRepetition === true) {
-          // Use setTimeout to delay the alert
           setTimeout(() => {
             alert('Draw by 3-fold repetition!')
           }, 350) // 1000 milliseconds = 1 seconds
-          this.gameOver = true // Mark the game as over
+          this.gameOver = true
           return
         }
 
         // Check if move leads to a draw by the fifty-move rule
         if (this.chessGame.isDrawByFiftyMoveRule()) {
-          // Use setTimeout to delay the alert
           setTimeout(() => {
             alert('Draw by the fifty-move rule!')
-          }, 350) // 1000 milliseconds = 1 seconds
-          this.gameOver = true // Mark the game as over
+          }, 350)
+          this.gameOver = true
           return
         }
         // Check for en-passant
@@ -230,41 +265,38 @@ class ChessUI {
 
         // Check for checkmate after the move
         if (this.chessGame.isCheckmate()) {
-          // Use setTimeout to delay the alert
           setTimeout(() => {
             alert(
               `${
                 this.chessGame.currentPlayerTurn === 'w' ? 'Black' : 'White'
               } wins by checkmate!`,
             )
-          }, 350) // 1000 milliseconds = 1 seconds
-          this.gameOver = true // Mark the game as over
+          }, 350)
+          this.gameOver = true
           return
         }
 
         // Check for stalemate after the move
         if (this.chessGame.isStalemate()) {
-          // Use setTimeout to delay the alert
           setTimeout(() => {
             alert('Draw by Stalemate!')
-          }, 350) // 1000 milliseconds = 1 seconds
-          this.gameOver = true // Mark the game as over
+          }, 350)
+          this.gameOver = true
           return
         }
 
         // Check for insufficient material after the move
         if (this.chessGame.isDrawByInsufficientMaterial()) {
-          // Use setTimeout to delay the alert
           setTimeout(() => {
             alert('Draw by insufficient material!')
-          }, 350) // 1000 milliseconds = 1 seconds
-          this.gameOver = true // Mark the game as over
+          }, 350)
+          this.gameOver = true
           return
         }
       } catch (error) {
         alert(error.message) // Notify user about the invalid move
         console.log(error)
-        this.deselectPiece() // Deselect the piece
+        this.deselectPiece()
       }
     } else {
       this.deselectPiece()
@@ -272,9 +304,9 @@ class ChessUI {
   }
 
   executeMove(startX, startY, row, column) {
-    this.chessGame.makeMove([startX, startY], [row, column]) // Move the piece with the new method
+    this.chessGame.makeMove([startX, startY], [row, column]) // Move the piece
     this.deselectPiece()
-    this.renderBoard() // Refresh the board
+    this.renderBoard()
   }
 }
 
