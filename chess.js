@@ -89,6 +89,8 @@ class ChessUI {
   afterPlayerMove() {
     if (this.isBotGame && this.chessGame.currentPlayerTurn === 'b') {
       this.stockfishAI.onPlayerMove(this.gameOver)
+    } else if (this.isBotGame && this.chessGame.currentPlayerTurn === 'w') {
+      this.stockfishAI.requestStockfishMove()
     }
   }
 
@@ -283,8 +285,8 @@ class ChessUI {
           // Remove the pawn from the board at en-passant target
           this.chessGame.board[capturedRow][capturedCol] = null
         }
-        this.executeMove(startX, startY, row, column)
 
+        this.executeMove(startX, startY, row, column)
         this.afterPlayerMove() // Request Stockfish move if it's a bot game
 
         // Check for checkmate after the move
