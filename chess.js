@@ -44,6 +44,14 @@ class ChessUI {
       )
       gameModeModal.show()
 
+      const stockfishStrengthInput =
+        document.getElementById('stockfishStrength')
+
+      // Update Stockfish Level when input changes
+      stockfishStrengthInput.addEventListener('input', () => {
+        this.updateStockfishLevel(stockfishStrengthInput.value)
+      })
+
       document
         .getElementById('playerVsPlayer')
         .addEventListener('click', () => {
@@ -57,6 +65,7 @@ class ChessUI {
         .addEventListener('click', () => {
           this.startPlayerVsBotGame('w')
           this.isBotGame = true // Player vs Stockfish (White)
+          this.updateStockfishLevel(stockfishStrengthInput.value) // Update Stockfish level
           gameModeModal.hide()
         })
 
@@ -65,9 +74,19 @@ class ChessUI {
         .addEventListener('click', () => {
           this.startPlayerVsBotGame('b')
           this.isBotGame = true // Stockfish (Black)
+          this.updateStockfishLevel(stockfishStrengthInput.value) // Update Stockfish level
           gameModeModal.hide()
         })
     })
+  }
+
+  updateStockfishLevel(level) {
+    if (this.stockfishAI) {
+      this.stockfishAI.stockfishLevel = level // Update the level in PlayStockfish
+      this.stockfishAI.stockfish.postMessage(
+        `setoption name Skill Level value ${level}`,
+      ) // Optionally, post the new level to Stockfish
+    }
   }
 
   startPlayerVsPlayerGame() {

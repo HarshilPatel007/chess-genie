@@ -5,6 +5,7 @@ export class PlayStockfish {
     this.chessGame = chessGame
     this.chessUI = chessUI
     this.stockfish = new Worker('./stockfish/stockfish-16.1-lite-single.js')
+    this.stockfishLevel = 0
 
     this.initializeStockfish()
   }
@@ -18,7 +19,9 @@ export class PlayStockfish {
       }
     }
 
-    this.stockfish.postMessage('setoption name UCI_Elo value 800') // Set Stockfish strength
+    this.stockfish.postMessage(
+      `setoption name Skill Level value ${this.stockfishLevel}`,
+    ) // Set Stockfish strength skill level (1-20)
   }
 
   extractBestMove(message) {

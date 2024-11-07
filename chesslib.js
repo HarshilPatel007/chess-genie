@@ -262,28 +262,26 @@ class ChessGame {
   }
 
   canCastleKingside() {
-    return this.canCastle('kingside')
+    return this.canCastle('kingside', this.currentPlayerTurn)
   }
 
   canCastleQueenside() {
-    return this.canCastle('queenside')
+    return this.canCastle('queenside', this.currentPlayerTurn)
   }
 
-  canCastle(side) {
-    const playerColor = this.currentPlayerTurn === WHITE ? 'white' : 'black'
+  canCastle(side, playerColor) {
     return (
-      !this.pieceMovedStatus[`${playerColor}King`] && // King has not moved
+      !this.pieceMovedStatus[
+        `${playerColor === WHITE ? 'white' : 'black'}King`
+      ] && // King has not moved
       !this.pieceMovedStatus[
         `${playerColor}${
           side === 'kingside' ? 'KingsideRook' : 'QueensideRook'
         }`
       ] && // Rook has not moved
       this.isPathClear(
-        [this.getRowForColor(this.currentPlayerTurn), 4],
-        [
-          this.getRowForColor(this.currentPlayerTurn),
-          side === 'kingside' ? 6 : 2,
-        ],
+        [this.getRowForColor(playerColor), 4],
+        [this.getRowForColor(playerColor), side === 'kingside' ? 6 : 1],
       ) // The path between king and rook must be clear
     )
   }
@@ -319,6 +317,10 @@ class ChessGame {
     const castlingType = this.isCastlingMove(start, end)
     if (!castlingType) return // Exit if not a castling move
 
+    // Check if the castling move is valid
+    if (!this.canCastleQueenside()) return
+    if (!this.canCastleQueenside()) return
+
     const row = this.getRowForColor(this.currentPlayerTurn)
     const kingInitialPosition = [row, 4]
     const rookInitialPosition =
@@ -329,10 +331,6 @@ class ChessGame {
 
     const king = this.getPiece(...kingInitialPosition)
     const rook = this.getPiece(...rookInitialPosition)
-
-    // Check if the castling move is valid
-    if (!this.canCastleKingside() && castlingType === 'kingside') return
-    if (!this.canCastleQueenside() && castlingType === 'queenside') return
 
     const isKingSafe1 = this.performTemporaryMovesAndCheckSafety(
       king,
@@ -353,8 +351,7 @@ class ChessGame {
     )
 
     // If the King's new position is not safe, abort castling
-    if (!isKingSafe1) return
-    if (!isKingSafe2) return
+    if (!isKingSafe1 && !isKingSafe2) return
 
     // Proceed with the final castling move
     this.finalizeCastling(
@@ -526,13 +523,13 @@ class ChessGame {
     const pieceColor = this.getPieceColor(piece)
     const playerColor = this.currentPlayerTurn === WHITE ? 'white' : 'black'
 
-    // if (pieceColor !== this.currentPlayerTurn) {
-    //   throw new Error("It's not your turn!")
-    // }
+    if (pieceColor !== this.currentPlayerTurn) {
+      throw new Error("It's not your turn!")
+    }
 
-    // if (!this.validatePieceMove(piece, start, end)) {
-    //   throw new Error('Invalid move!')
-    // }
+    if (!this.validatePieceMove(piece, start, end)) {
+      throw new Error('Invalid move!')
+    }
 
     // Track if the move involved a pawn or capture
     if (
