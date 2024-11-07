@@ -409,18 +409,6 @@ class ChessGame {
     this.switchTurn() // Switch turn after castling
   }
 
-  castlingForStockfish(start, end) {
-    const row = this.getRowForColor(this.currentPlayerTurn)
-    const castlingType = this.isCastlingMove(start, end)
-    const rookInitialPosition =
-      castlingType === 'kingside' ? [row, 7] : [row, 0]
-    console.log(castlingType)
-    const rookNewPosition = castlingType === 'kingside' ? [row, 5] : [row, 3]
-    const rook = this.getPiece(...rookInitialPosition)
-    this.setPiece(...rookNewPosition, rook)
-    this.removePiece(...rookInitialPosition)
-  }
-
   updateCastlingMoveStatus(castlingDirection) {
     if (this.currentPlayerTurn === WHITE) {
       this.pieceMovedStatus.whiteKing = true
@@ -570,16 +558,15 @@ class ChessGame {
     const boardState = this.getBoardState()
     this.boardHistory.push(boardState) // Store the current board state in history
 
+    // Handle castling
+    if (this.isCastlingMove(start, end)) {
+      this.castle(start, end) // Handle the castling move instead of a normal move
+      return
+    }
+
     // Move the piece
     this.setPiece(end[0], end[1], piece)
     this.removePiece(start[0], start[1])
-
-    const getDistInfo = this.calculateMoveDistance(start, end, piece)
-
-    if (getDistInfo['dist'] === 2 && getDistInfo['piece'] === 'K') {
-      console.log(getDistInfo['dist'])
-      this.castlingForStockfish(start, end)
-    }
 
     this.trackPieceMovement(piece, playerColor, start)
 

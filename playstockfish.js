@@ -35,11 +35,22 @@ export class PlayStockfish {
     const start = coordinates['start']
     const end = coordinates['end']
 
-    try {
-      this.chessGame.makeMove(start, end)
-      this.chessUI.renderBoard() // Refresh the board after Stockfish's move
-    } catch (error) {
-      console.error(error) // Log the error to the console if move is invalid
+    // Check for castling move
+    const castlingType = this.chessGame.isCastlingMove(start, end)
+    if (castlingType) {
+      try {
+        this.chessGame.castle(start, end)
+        this.chessUI.renderBoard()
+      } catch (error) {
+        console.error(error) // Log error for invalid castling
+      }
+    } else {
+      try {
+        this.chessGame.makeMove(start, end)
+        this.chessUI.renderBoard() // Refresh the board after Stockfish's move
+      } catch (error) {
+        console.error(error) // Log error for an invalid move
+      }
     }
   }
 
