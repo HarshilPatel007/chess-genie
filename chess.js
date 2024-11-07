@@ -105,7 +105,7 @@ class ChessUI {
   }
 
   // Method called after player's move to request Stockfish's move
-  afterPlayerMove() {
+  stockfishMove() {
     if (this.isBotGame && this.chessGame.currentPlayerTurn === 'b') {
       this.stockfishAI.onPlayerMove(this.gameOver)
     } else if (this.isBotGame && this.chessGame.currentPlayerTurn === 'w') {
@@ -260,6 +260,8 @@ class ChessUI {
         this.chessGame.castle([startX, startY], [row, column])
         this.renderBoard() // Refresh the board
         this.deselectPiece()
+        this.chessGame.switchTurn()
+        this.stockfishMove() // Request Stockfish move if it's a bot game
         return
       } catch (error) {
         alert(error.message) // Notify user about the invalid castling
@@ -306,7 +308,7 @@ class ChessUI {
         }
 
         this.executeMove(startX, startY, row, column)
-        this.afterPlayerMove() // Request Stockfish move if it's a bot game
+        this.stockfishMove() // Request Stockfish move if it's a bot game
 
         // Check for checkmate after the move
         if (this.chessGame.isCheckmate()) {

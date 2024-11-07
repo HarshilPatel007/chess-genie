@@ -406,7 +406,6 @@ class ChessGame {
 
     // Update the movability status for castling
     this.updateCastlingMoveStatus(castlingType)
-    this.switchTurn() // Switch turn after castling
   }
 
   updateCastlingMoveStatus(castlingDirection) {
@@ -558,9 +557,8 @@ class ChessGame {
     const boardState = this.getBoardState()
     this.boardHistory.push(boardState) // Store the current board state in history
 
-    // Handle castling
+    // return if it's castling move
     if (this.isCastlingMove(start, end)) {
-      this.castle(start, end) // Handle the castling move instead of a normal move
       return
     }
 

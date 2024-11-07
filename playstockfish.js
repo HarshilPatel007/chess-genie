@@ -41,6 +41,7 @@ export class PlayStockfish {
       try {
         this.chessGame.castle(start, end)
         this.chessUI.renderBoard()
+        this.chessGame.switchTurn()
       } catch (error) {
         console.error(error) // Log error for invalid castling
       }
