@@ -318,8 +318,8 @@ class ChessGame {
     if (!castlingType) return // Exit if not a castling move
 
     // Check if the castling move is valid
-    if (!this.canCastleQueenside()) return
-    if (!this.canCastleQueenside()) return
+    // if (!this.canCastleQueenside()) return
+    // if (!this.canCastleQueenside()) return
 
     const row = this.getRowForColor(this.currentPlayerTurn)
     const kingInitialPosition = [row, 4]
@@ -407,6 +407,18 @@ class ChessGame {
     // Update the movability status for castling
     this.updateCastlingMoveStatus(castlingType)
     this.switchTurn() // Switch turn after castling
+  }
+
+  castlingForStockfish(start, end) {
+    const row = this.getRowForColor(this.currentPlayerTurn)
+    const castlingType = this.isCastlingMove(start, end)
+    const rookInitialPosition =
+      castlingType === 'kingside' ? [row, 7] : [row, 0]
+    console.log(castlingType)
+    const rookNewPosition = castlingType === 'kingside' ? [row, 5] : [row, 3]
+    const rook = this.getPiece(...rookInitialPosition)
+    this.setPiece(...rookNewPosition, rook)
+    this.removePiece(...rookInitialPosition)
   }
 
   updateCastlingMoveStatus(castlingDirection) {
@@ -518,6 +530,19 @@ class ChessGame {
     return this.validatePieceMove(piece, start, end)
   }
 
+  calculateMoveDistance(start, end, piece) {
+    if (!this.isOnBoard(start) || !this.isOnBoard(end)) {
+      throw new Error('Start or end position is out of bounds.')
+    }
+
+    const deltaX = Math.abs(end[0] - start[0]) // Difference in rows
+    const deltaY = Math.abs(end[1] - start[1]) // Difference in columns
+
+    const dist = Math.max(deltaX, deltaY)
+
+    return { dist, piece }
+  }
+
   makeMove(start, end) {
     const piece = this.getPiece(start[0], start[1])
     const pieceColor = this.getPieceColor(piece)
@@ -527,9 +552,9 @@ class ChessGame {
       throw new Error("It's not your turn!")
     }
 
-    if (!this.validatePieceMove(piece, start, end)) {
-      throw new Error('Invalid move!')
-    }
+    // if (!this.validatePieceMove(piece, start, end)) {
+    //   throw new Error('Invalid move!')
+    // }
 
     // Track if the move involved a pawn or capture
     if (
@@ -548,6 +573,13 @@ class ChessGame {
     // Move the piece
     this.setPiece(end[0], end[1], piece)
     this.removePiece(start[0], start[1])
+
+    const getDistInfo = this.calculateMoveDistance(start, end, piece)
+
+    if (getDistInfo['dist'] === 2 && getDistInfo['piece'] === 'K') {
+      console.log(getDistInfo['dist'])
+      this.castlingForStockfish(start, end)
+    }
 
     this.trackPieceMovement(piece, playerColor, start)
 
