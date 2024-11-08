@@ -109,7 +109,7 @@ class ChessUI {
     if (this.isBotGame && this.chessGame.currentPlayerTurn === 'b') {
       this.stockfishAI.onPlayerMove(this.gameOver)
     } else if (this.isBotGame && this.chessGame.currentPlayerTurn === 'w') {
-      this.stockfishAI.requestStockfishMove()
+      this.stockfishAI.onPlayerMove(this.gameOver)
     }
   }
 
@@ -351,9 +351,60 @@ class ChessUI {
   }
 
   executeMove(startX, startY, row, column) {
-    this.chessGame.makeMove([startX, startY], [row, column]) // Move the piece
-    this.deselectPiece()
-    this.renderBoard()
+    const pieceSquare = this.chessboardElement.querySelector(
+      `.square[data-row='${startX}'][data-col='${startY}'] .piece`,
+    )
+
+    // Calculate the target square's position
+    const targetSquare = this.chessboardElement.querySelector(
+      `.square[data-row='${row}'][data-col='${column}']`,
+    )
+
+    // Ensure that we already have the piece to move, and not create duplicates
+    if (!pieceSquare) {
+      console.error('No piece found at the starting square.')
+      return
+    }
+
+    // Get the bounding rectangles for the start and target positions
+    const targetRect = targetSquare.getBoundingClientRect()
+    const startRect = pieceSquare.getBoundingClientRect()
+
+    // Style the piece for animation
+    pieceSquare.style.position = 'absolute' // Position the piece absolutely
+    pieceSquare.style.zIndex = 10 // Bring piece on top of everything
+
+    // Temporarily remove the piece from the DOM
+    pieceSquare.parentElement.removeChild(pieceSquare)
+
+    // Append the piece to the target square to animate
+    targetSquare.appendChild(pieceSquare)
+
+    // Set the initial position
+    pieceSquare.style.left = `${startRect.left - targetRect.left}px`
+    pieceSquare.style.top = `${startRect.top - targetRect.top}px`
+
+    // Create the move animation by changing its position
+    setTimeout(() => {
+      // Apply the translation to move the piece to the target square
+      pieceSquare.style.transition = 'transform 0.5s ease' // Optional for smoother animation
+      pieceSquare.style.transform = `translate(${
+        targetRect.left - startRect.left
+      }px, ${targetRect.top - startRect.top}px)`
+    }, 0) // Fire immediately after setting position
+
+    // Make the move after the animation completes
+    setTimeout(() => {
+      // Move the piece in the chessGame model
+      this.chessGame.makeMove([startX, startY], [row, column])
+
+      // Reset the piece properties
+      pieceSquare.style.position = '' // Restore position
+      pieceSquare.style.zIndex = '' // Reset z-index
+      pieceSquare.style.transform = '' // Reset transform
+      this.deselectPiece()
+      this.renderBoard() // Refresh the board
+    }, 250) // Wait for the animation duration before executing the move
   }
 }
 

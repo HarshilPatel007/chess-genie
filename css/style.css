@@ -9,6 +9,7 @@ body {
   border: 1px solid #333333;
   width: fit-content;
   height: fit-content;
+  overflow: hidden; /* Prevent overflow of chess pieces */
 }
 
 .square {
@@ -32,6 +33,9 @@ body {
   width: 100%;
   height: auto;
   cursor: pointer;
+  /* transition: transform 0.5s ease; Add transition for movement */
+  max-width: 100%; /* Ensure piece does not exceed square size */
+  max-height: 100%; /* Ensure piece does not exceed square size */
 }
 
 .highlight-circle {
