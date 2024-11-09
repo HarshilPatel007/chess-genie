@@ -350,6 +350,45 @@ class ChessUI {
     }
   }
 
+  animateMove(pieceSquare, targetSquare) {
+    // Get the bounding rectangles for the start and target positions
+    const targetRect = targetSquare.getBoundingClientRect()
+    const startRect = pieceSquare.getBoundingClientRect()
+
+    // Temporarily remove the piece from the DOM
+    pieceSquare.parentElement.removeChild(pieceSquare)
+
+    // Append the piece to the target square to set initial position
+    targetSquare.appendChild(pieceSquare)
+
+    // Set the initial position using transforms
+    pieceSquare.style.position = 'absolute' // Position the piece to allow transforms
+
+    // Position the piece at the starting square for animation
+    pieceSquare.style.left = `${startRect.left - targetRect.left}px`
+    pieceSquare.style.top = `${startRect.top - targetRect.top}px`
+    pieceSquare.style.zIndex = 10 // Bring piece on top of everything
+
+    // Apply the translation to move the piece to the target square
+    requestAnimationFrame(() => {
+      pieceSquare.style.transition = 'transform 0.3s ease-in-out'
+      pieceSquare.style.transform = `translate(${
+        targetRect.left - startRect.left
+      }px, ${targetRect.top - startRect.top}px)`
+    })
+
+    // Reset the piece properties after the animation completes
+    setTimeout(() => {
+      // Reset the piece properties after the animation
+      pieceSquare.style.position = '' // Restore position
+      pieceSquare.style.zIndex = '' // Reset z-index
+      pieceSquare.style.transition = '' // Reset transition
+      pieceSquare.style.transform = '' // Reset transform
+      this.deselectPiece()
+      this.renderBoard()
+    }, 300) // Wait for the animation duration before executing the move
+  }
+
   executeMove(startX, startY, row, column) {
     const pieceSquare = this.chessboardElement.querySelector(
       `.square[data-row='${startX}'][data-col='${startY}'] .piece`,
@@ -366,45 +405,11 @@ class ChessUI {
       return
     }
 
-    // Get the bounding rectangles for the start and target positions
-    const targetRect = targetSquare.getBoundingClientRect()
-    const startRect = pieceSquare.getBoundingClientRect()
+    // Call the animateMove method to handle the animation
+    this.animateMove(pieceSquare, targetSquare)
 
-    // Style the piece for animation
-    pieceSquare.style.position = 'absolute' // Position the piece absolutely
-    pieceSquare.style.zIndex = 10 // Bring piece on top of everything
-
-    // Temporarily remove the piece from the DOM
-    pieceSquare.parentElement.removeChild(pieceSquare)
-
-    // Append the piece to the target square to animate
-    targetSquare.appendChild(pieceSquare)
-
-    // Set the initial position
-    pieceSquare.style.left = `${startRect.left - targetRect.left}px`
-    pieceSquare.style.top = `${startRect.top - targetRect.top}px`
-
-    // Create the move animation by changing its position
-    setTimeout(() => {
-      // Apply the translation to move the piece to the target square
-      pieceSquare.style.transition = 'transform 0.5s ease' // Optional for smoother animation
-      pieceSquare.style.transform = `translate(${
-        targetRect.left - startRect.left
-      }px, ${targetRect.top - startRect.top}px)`
-    }, 0) // Fire immediately after setting position
-
-    // Make the move after the animation completes
-    setTimeout(() => {
-      // Move the piece in the chessGame model
-      this.chessGame.makeMove([startX, startY], [row, column])
-
-      // Reset the piece properties
-      pieceSquare.style.position = '' // Restore position
-      pieceSquare.style.zIndex = '' // Reset z-index
-      pieceSquare.style.transform = '' // Reset transform
-      this.deselectPiece()
-      this.renderBoard() // Refresh the board
-    }, 250) // Wait for the animation duration before executing the move
+    // Move the piece in the chessGame model
+    this.chessGame.makeMove([startX, startY], [row, column])
   }
 }
 
