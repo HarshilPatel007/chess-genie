@@ -260,7 +260,6 @@ class ChessUI {
         this.chessGame.castle([startX, startY], [row, column])
         this.renderBoard() // Refresh the board
         this.deselectPiece()
-        this.chessGame.switchTurn()
         this.stockfishMove() // Request Stockfish move if it's a bot game
         return
       } catch (error) {

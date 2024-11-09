@@ -270,20 +270,25 @@ class ChessGame {
   }
 
   canCastle(side, playerColor) {
-    return (
-      !this.pieceMovedStatus[
-        `${playerColor === WHITE ? 'white' : 'black'}King`
-      ] && // King has not moved
-      !this.pieceMovedStatus[
+    const row = this.getRowForColor(playerColor)
+
+    // Check if the king and rook have moved
+    const kingMoved =
+      this.pieceMovedStatus[`${playerColor === WHITE ? 'white' : 'black'}King`]
+    const rookMoved =
+      this.pieceMovedStatus[
         `${playerColor}${
           side === 'kingside' ? 'KingsideRook' : 'QueensideRook'
         }`
-      ] && // Rook has not moved
-      this.isPathClear(
-        [this.getRowForColor(playerColor), 4],
-        [this.getRowForColor(playerColor), side === 'kingside' ? 6 : 1],
-      ) // The path between king and rook must be clear
-    )
+      ]
+
+    // Check if the path for castling is clear
+    const pathClear =
+      side === 'kingside'
+        ? this.isPathClear([row, 4], [row, 6]) // Check path for kingside castling
+        : this.isPathClear([row, 0], [row, 4]) // Check path for queenside castling
+
+    return !kingMoved && !rookMoved && pathClear // Return true if neither piece has moved and the path is clear
   }
 
   getRowForColor(color) {
@@ -317,16 +322,12 @@ class ChessGame {
     const castlingType = this.isCastlingMove(start, end)
     if (!castlingType) return // Exit if not a castling move
 
-    // Check if the castling move is valid
-    // if (!this.canCastleQueenside()) return
-    // if (!this.canCastleQueenside()) return
-
     const row = this.getRowForColor(this.currentPlayerTurn)
     const kingInitialPosition = [row, 4]
     const rookInitialPosition =
       castlingType === 'kingside' ? [row, 7] : [row, 0]
     const kingNewPosition1 = castlingType === 'kingside' ? [row, 6] : [row, 2] // final square
-    const kingNewPosition2 = castlingType === 'kingside' ? [row, 5] : [row, 3] // square besides the king
+    const kingNewPosition2 = castlingType === 'kingside' ? [row, 5] : [row, 3] // square beside the king
     const rookNewPosition = castlingType === 'kingside' ? [row, 5] : [row, 3]
 
     const king = this.getPiece(...kingInitialPosition)
@@ -353,16 +354,35 @@ class ChessGame {
     // If the King's new position is not safe, abort castling
     if (!isKingSafe1 && !isKingSafe2) return
 
-    // Proceed with the final castling move
-    this.finalizeCastling(
-      castlingType,
-      king,
-      rook,
-      kingInitialPosition,
-      rookInitialPosition,
-      kingNewPosition1,
-      rookNewPosition,
-    )
+    // Check specific path clearance for Kingside castling
+    if (castlingType === 'kingside' && this.canCastleKingside()) {
+      this.finalizeCastling(
+        castlingType,
+        king,
+        rook,
+        kingInitialPosition,
+        rookInitialPosition,
+        kingNewPosition1,
+        rookNewPosition,
+      )
+      this.switchTurn()
+      return
+    }
+
+    // Check specific path clearance for Queenside castling
+    if (castlingType === 'queenside' && this.canCastleQueenside()) {
+      this.finalizeCastling(
+        castlingType,
+        king,
+        rook,
+        kingInitialPosition,
+        rookInitialPosition,
+        kingNewPosition1,
+        rookNewPosition,
+      )
+      this.switchTurn()
+      return
+    }
   }
 
   performTemporaryMovesAndCheckSafety(
@@ -539,9 +559,9 @@ class ChessGame {
       throw new Error("It's not your turn!")
     }
 
-    // if (!this.validatePieceMove(piece, start, end)) {
-    //   throw new Error('Invalid move!')
-    // }
+    if (!this.validatePieceMove(piece, start, end)) {
+      throw new Error('Invalid move!')
+    }
 
     // Track if the move involved a pawn or capture
     if (
@@ -581,8 +601,6 @@ class ChessGame {
 
     // Switch turn
     this.switchTurn()
-
-    console.log(this.getFEN())
   }
 
   // check if fifty-move rule applies
@@ -1048,5 +1066,5 @@ class ChessGame {
 // https://lichess.org/3KkqKLdO#66 3-fold rep testing
 // https://lichess.org/games/search?perf=6&mode=1&durationMin=600&durationMax=600&status=34&dateMin=2024-10-28&dateMax=2024-10-29&sort.field=d&sort.order=desc#results
 
-const initialFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+const initialFEN = 'r3kbnr/pppppppp/8/2q/8/8/PPPP2PP/RNBQK2R w KQkq - 0 1'
 export const chess = new ChessGame(initialFEN)
