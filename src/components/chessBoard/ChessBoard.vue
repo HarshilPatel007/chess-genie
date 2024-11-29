@@ -78,6 +78,13 @@
       </option>
     </select>
   </div>
+  <div class="move-history">
+    <div v-for="(move, index) in moveHistory" :key="index">
+      <button class="move-button" @click="navigateToMove(index)">
+        {{ move }}
+      </button>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -91,6 +98,8 @@ const isFlipped = ref(false)
 const selectedCell = ref(null)
 const legalMovesForDraggingPiece = ref([])
 
+const moveHistory = ref([])
+const moveHistoryFEN = ref([])
 const chessBoardSquares = SQUARES
 const currentBoardSquares = computed(() =>
   isFlipped.value ? chessBoardSquares.slice().reverse() : chessBoardSquares,
@@ -137,6 +146,9 @@ const handleDrop = (toSquare) => {
     // Update boardState
     boardState.value[toSquare] = boardState.value[fromSquare]
     boardState.value[fromSquare] = null
+
+    moveHistory.value.push(validMove.san)
+    moveHistoryFEN.value.push(chess.value.fen())
   }
   // Clear highlights after move
   highlightedSquares.value = {}
@@ -245,6 +257,22 @@ const handleEnPassant = (validMove, actualToSquare) => {
       (parseInt(actualToSquare.charAt(1)) + (chess.value.turn() === 'w' ? -1 : 1))
     boardState.value[capturedPawnSquare] = null
   }
+}
+
+const navigateToMove = (index) => {
+  // Restore the FEN at the specified index in history
+  const fen = moveHistoryFEN.value[index]
+  setPositionFromFEN(fen)
+
+  // Optionally, you could update the move history to highlight the selected move
+  moveHistory.value.forEach((move, i) => {
+    if (i === index) {
+      // Add a selected class to highlight the clicked move
+      document.querySelectorAll('.move-button')[i].classList.add('selected-move')
+    } else {
+      document.querySelectorAll('.move-button')[i].classList.remove('selected-move')
+    }
+  })
 }
 
 const setPositionFromFEN = (fen) => {
@@ -360,5 +388,23 @@ setPositionFromFEN('rnb1k2r/ppppqppp/5n2/2b1b3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+
+.move-history {
+  margin-top: 20px;
+  display: inline-flex;
+}
+
+.move-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  color: blue;
+  margin: 2px 0;
+}
+
+.selected-move {
+  background-color: rgba(0, 136, 255, 0.461);
 }
 </style>
