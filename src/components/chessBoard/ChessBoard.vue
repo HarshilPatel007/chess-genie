@@ -81,7 +81,7 @@
   <div class="move-history">
     <div v-for="(move, index) in moveHistory" :key="index">
       <button class="move-button" @click="navigateToMove(index)">
-        {{ move }}
+        {{ move.san }}
       </button>
     </div>
   </div>
@@ -98,8 +98,8 @@ const isFlipped = ref(false)
 const selectedCell = ref(null)
 const legalMovesForDraggingPiece = ref([])
 
-const moveHistory = ref([])
-const moveHistoryFEN = ref([])
+const moveHistory = ref([{ san: '', before: '', after: '' }])
+
 const chessBoardSquares = SQUARES
 const currentBoardSquares = computed(() =>
   isFlipped.value ? chessBoardSquares.slice().reverse() : chessBoardSquares,
@@ -141,14 +141,22 @@ const handleDrop = (toSquare) => {
     handleCastling(validMove)
     handleEnPassant(validMove, toSquare)
 
+    // Get FEN before the move
+    const beforeFEN = chess.value.fen()
     // Move piece
     chess.value.move({ from: fromSquare, to: toSquare })
+    // Get FEN after the move
+    const afterFEN = chess.value.fen()
+
     // Update boardState
     boardState.value[toSquare] = boardState.value[fromSquare]
     boardState.value[fromSquare] = null
 
-    moveHistory.value.push(validMove.san)
-    moveHistoryFEN.value.push(chess.value.fen())
+    moveHistory.value.push({
+      san: validMove.san,
+      before: beforeFEN,
+      after: afterFEN,
+    })
   }
   // Clear highlights after move
   highlightedSquares.value = {}
@@ -260,19 +268,11 @@ const handleEnPassant = (validMove, actualToSquare) => {
 }
 
 const navigateToMove = (index) => {
-  // Restore the FEN at the specified index in history
-  const fen = moveHistoryFEN.value[index]
-  setPositionFromFEN(fen)
-
-  // Optionally, you could update the move history to highlight the selected move
-  moveHistory.value.forEach((move, i) => {
-    if (i === index) {
-      // Add a selected class to highlight the clicked move
-      document.querySelectorAll('.move-button')[i].classList.add('selected-move')
-    } else {
-      document.querySelectorAll('.move-button')[i].classList.remove('selected-move')
-    }
-  })
+  // Get the FEN from moveHistory at the specified index
+  const selectedMove = moveHistory.value[index]
+  if (selectedMove) {
+    setPositionFromFEN(selectedMove.after)
+  }
 }
 
 const setPositionFromFEN = (fen) => {
@@ -402,9 +402,5 @@ setPositionFromFEN('rnb1k2r/ppppqppp/5n2/2b1b3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq
   text-decoration: underline;
   color: blue;
   margin: 2px 0;
-}
-
-.selected-move {
-  background-color: rgba(0, 136, 255, 0.461);
 }
 </style>
