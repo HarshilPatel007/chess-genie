@@ -8,7 +8,7 @@
       @mousemove="drawArrow"
       @contextmenu.prevent
     >
-      <svg ref="svg" width="400" height="400">
+      <svg ref="svg" class="arrow">
         <g v-for="(arrow, index) in arrows" :key="index">
           <marker
             :id="`arrowhead-${index}`"
@@ -257,5 +257,6 @@ onMounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
+  z-index: 1;
 }
 </style>
