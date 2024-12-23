@@ -57,29 +57,30 @@
           </g>
 
           <!-- show temp arrow while drawing -->
-          <line
-            v-if="isDrawingArrow"
-            :x1="startX"
-            :y1="startY"
-            :x2="endX"
-            :y2="endY"
-            stroke-width="10"
-            :stroke="currentArrow.color"
-            fill="none"
-            opacity="0.7"
-            marker-end="url(#arrowhead-temp)"
-          />
+          <g v-if="isDrawingArrow">
+            <line
+              :x1="startX"
+              :y1="startY"
+              :x2="endX"
+              :y2="endY"
+              stroke-width="10"
+              :stroke="currentArrow.color"
+              fill="none"
+              opacity="0.7"
+              marker-end="url(#arrowhead-temp)"
+            />
 
-          <marker
-            id="arrowhead-temp"
-            refX="1.25"
-            refY="1.25"
-            markerWidth="2"
-            markerHeight="2.5"
-            orient="auto"
-          >
-            <polygon points="0.3 0, 2 1.25, 0.3 2.5" :fill="currentArrow.color" />
-          </marker>
+            <marker
+              id="arrowhead-temp"
+              refX="1.25"
+              refY="1.25"
+              markerWidth="2"
+              markerHeight="2.5"
+              orient="auto"
+            >
+              <polygon points="0.3 0, 2 1.25, 0.3 2.5" :fill="currentArrow.color" />
+            </marker>
+          </g>
         </svg>
       </div>
     </div>
@@ -155,6 +156,9 @@ const startDrag = (square) => {
 
 const endDrag = () => {
   selectedSquare.value = null
+  isDrawingArrow.value = false
+  currentArrow.value = { start: null, end: null, color: null }
+  arrows.value = []
 }
 
 const dropPiece = (targetSquare) => {
@@ -167,7 +171,6 @@ const dropPiece = (targetSquare) => {
     if (move) {
       updatePieces()
     }
-
     endDrag()
   }
 }
@@ -182,8 +185,12 @@ const startDrawing = (event) => {
     else currentArrow.value.color = colors.ctrl
 
     const rect = chessboard.value.getBoundingClientRect()
-    startX.value = event.clientX - rect.left
-    startY.value = event.clientY - rect.top
+    const squareSize = rect.width / 8
+    const x = Math.floor((event.clientX - rect.left) / squareSize)
+    const y = Math.floor((event.clientY - rect.top) / squareSize)
+
+    startX.value = (x + 0.5) * squareSize
+    startY.value = (y + 0.5) * squareSize
 
     endX.value = startX.value
     endY.value = startY.value
@@ -197,38 +204,47 @@ const startDrawing = (event) => {
 }
 
 const stopDrawing = () => {
-  if (isDrawingArrow.value) {
+  const newArrow = {
+    start: { x: startX.value, y: startY.value },
+    end: { x: endX.value, y: endY.value },
+    color: currentArrow.value.color,
+  }
+  if (arrows.value && currentArrow.value && isDrawingArrow.value) {
+    // Check for existing arrows that match the new arrow
     const existingArrowIndex = arrows.value.findIndex(
       (arrow) =>
-        arrow.color === currentArrow.value.color &&
-        arrow.start.x === currentArrow.value.start.x &&
-        arrow.start.y === currentArrow.value.start.y &&
-        arrow.end.x === currentArrow.value.end.x &&
-        arrow.end.y === currentArrow.value.end.y,
+        arrow.start.x === newArrow.start.x &&
+        arrow.start.y === newArrow.start.y &&
+        arrow.end.x === newArrow.end.x &&
+        arrow.end.y === newArrow.end.y &&
+        arrow.color === newArrow.color,
     )
+
     if (existingArrowIndex !== -1) {
       // Remove the existing arrow of the same color and position
       arrows.value.splice(existingArrowIndex, 1)
     } else {
-      arrows.value.push({
-        start: { x: startX.value, y: startY.value },
-        end: { x: endX.value, y: endY.value },
-        color: currentArrow.value.color,
-      })
+      arrows.value.push(newArrow)
     }
+
+    isDrawingArrow.value = false
+    startX.value = null
+    startY.value = null
+    endX.value = null
+    endY.value = null
+    currentArrow.value = { start: null, end: null, color: null }
   }
-  isDrawingArrow.value = false
-  startX.value = null
-  startY.value = null
-  endX.value = null
-  endY.value = null
 }
 
 const drawArrow = (event) => {
   if (!isDrawingArrow.value) return
   const rect = chessboard.value.getBoundingClientRect()
-  endX.value = event.clientX - rect.left
-  endY.value = event.clientY - rect.top
+  const squareSize = rect.width / 8
+  const x = Math.floor((event.clientX - rect.left) / squareSize)
+  const y = Math.floor((event.clientY - rect.top) / squareSize)
+
+  endX.value = (x + 0.5) * squareSize
+  endY.value = (y + 0.5) * squareSize
 }
 
 onMounted(() => {
