@@ -1,5 +1,6 @@
 <template>
   <div class="flex flex-col">
+    <!-- Chessboard start -->
     <div
       class="chessboard"
       ref="chessboard"
@@ -8,59 +9,9 @@
       @mousemove="drawArrow"
       @contextmenu.prevent
     >
-      <svg ref="svg" class="arrow">
-        <g v-for="(arrow, index) in arrows" :key="index">
-          <marker
-            :id="`arrowhead-${index}`"
-            refX="1.25"
-            refY="1.25"
-            markerWidth="2"
-            markerHeight="2.5"
-            orient="auto"
-          >
-            <polygon points="0.3 0, 2 1.25, 0.3 2.5" :fill="arrow.color" />
-          </marker>
-          <line
-            :x1="arrow.start.x"
-            :y1="arrow.start.y"
-            :x2="arrow.end.x"
-            :y2="arrow.end.y"
-            :marker-end="`url(#arrowhead-${index})`"
-            stroke-width="10"
-            :stroke="arrow.color"
-            fill="none"
-            opacity="0.7"
-          />
-        </g>
-
-        <!-- Only show this line while drawing -->
-        <line
-          v-if="isDrawingArrow"
-          :x1="startX"
-          :y1="startY"
-          :x2="endX"
-          :y2="endY"
-          stroke-width="10"
-          stroke="red"
-          fill="none"
-          opacity="0.4"
-          marker-end="url(#arrowhead-temp)"
-        />
-
-        <marker
-          id="arrowhead-temp"
-          refX="1.25"
-          refY="1.25"
-          markerWidth="2"
-          markerHeight="2.5"
-          orient="auto"
-        >
-          <polygon points="0.3 0, 2 1.25, 0.3 2.5" fill="red" />
-        </marker>
-      </svg>
       <div class="chessboard-hidden" ref="chessboard-hidden">
         <div
-          v-for="(square, index) in squaresToRender"
+          v-for="square in squares"
           :key="square"
           class="square"
           @drop="dropPiece(square)"
@@ -77,6 +28,59 @@
             <img :src="getPieceImage(pieces[square])" alt="piece" />
           </div>
         </div>
+        <!-- Chessboard ends -->
+
+        <!-- Arrows -->
+        <svg ref="svg" class="arrow">
+          <g v-for="(arrow, index) in arrows" :key="index">
+            <marker
+              :id="`arrowhead-${index}`"
+              refX="1.25"
+              refY="1.25"
+              markerWidth="2"
+              markerHeight="2.5"
+              orient="auto"
+            >
+              <polygon points="0.3 0, 2 1.25, 0.3 2.5" :fill="arrow.color" />
+            </marker>
+            <line
+              :x1="arrow.start.x"
+              :y1="arrow.start.y"
+              :x2="arrow.end.x"
+              :y2="arrow.end.y"
+              :marker-end="`url(#arrowhead-${index})`"
+              stroke-width="10"
+              :stroke="arrow.color"
+              fill="none"
+              opacity="0.7"
+            />
+          </g>
+
+          <!-- show temp arrow while drawing -->
+          <line
+            v-if="isDrawingArrow"
+            :x1="startX"
+            :y1="startY"
+            :x2="endX"
+            :y2="endY"
+            stroke-width="10"
+            :stroke="currentArrowColor"
+            fill="none"
+            opacity="0.7"
+            marker-end="url(#arrowhead-temp)"
+          />
+
+          <marker
+            id="arrowhead-temp"
+            refX="1.25"
+            refY="1.25"
+            markerWidth="2"
+            markerHeight="2.5"
+            orient="auto"
+          >
+            <polygon points="0.3 0, 2 1.25, 0.3 2.5" :fill="currentArrowColor" />
+          </marker>
+        </svg>
       </div>
     </div>
     <button @click="flipBoard" class="mr-1 text-gray-600">
@@ -95,15 +99,24 @@ const startY = ref(null)
 const endX = ref(null)
 const endY = ref(null)
 const arrows = ref([])
+const currentArrowColor = ref(null)
 const chessboard = ref(null)
-const squares = SQUARES
 const pieces = ref({})
-const selectedPiece = ref(null)
-
+const selectedSquare = ref(null)
 const fen = ref(DEFAULT_POSITION)
-
 const chess = new Chess()
 const isFlipped = ref(false)
+
+const squares = computed(() => {
+  return isFlipped.value ? SQUARES.slice().reverse() : SQUARES
+})
+
+const colors = {
+  ctrl: 'blue',
+  shift: 'red',
+  alt: 'green',
+  altShift: 'yellow',
+}
 
 // Set the FEN string to update the board
 const setFen = (fenString) => {
@@ -126,40 +139,31 @@ const updatePieces = () => {
   pieces.value = piecesObj
 }
 
-// Get the image URL for the piece
 const getPieceImage = (piece) => {
   const color = piece.color === 'w' ? 'w' : 'b'
   const pieceType = piece.type.toUpperCase()
   return `/pieces/cardinal/${color}${pieceType}.svg`
 }
 
-// Computed property to determine squares order based on flipping
-const squaresToRender = computed(() => {
-  return isFlipped.value ? squares.slice().reverse() : squares
-})
-
 const flipBoard = () => {
   isFlipped.value = !isFlipped.value
 }
 
 const startDrag = (square) => {
-  selectedPiece.value = square // Track which piece is being dragged
+  selectedSquare.value = square
 }
 
 const endDrag = () => {
-  selectedPiece.value = null // Clear the selected piece when drag ends
+  selectedSquare.value = null
 }
 
 const dropPiece = (targetSquare) => {
-  if (selectedPiece.value) {
-    // Attempt to move the piece in chess.js, updating the board state
+  if (selectedSquare.value) {
     const move = chess.move({
-      from: selectedPiece.value,
+      from: selectedSquare.value,
       to: targetSquare,
-      promotion: 'q',
     })
 
-    // Only update pieces if the move was valid
     if (move) {
       updatePieces()
     }
@@ -171,6 +175,12 @@ const dropPiece = (targetSquare) => {
 const startDrawing = (event) => {
   if (event.button === 2) {
     isDrawingArrow.value = true
+    if (event.altKey && event.shiftKey) currentArrowColor.value = colors.altShift
+    else if (event.ctrlKey) currentArrowColor.value = colors.ctrl
+    else if (event.shiftKey) currentArrowColor.value = colors.shift
+    else if (event.altKey) currentArrowColor.value = colors.alt
+    else currentArrowColor.value = colors.ctrl
+
     const rect = chessboard.value.getBoundingClientRect()
     startX.value = event.clientX - rect.left
     startY.value = event.clientY - rect.top
@@ -181,11 +191,16 @@ const startDrawing = (event) => {
 }
 
 const stopDrawing = () => {
-  if (isDrawingArrow.value && endX.value !== null && endY.value !== null) {
+  if (
+    isDrawingArrow.value &&
+    endX.value !== null &&
+    endY.value !== null &&
+    currentArrowColor.value !== null
+  ) {
     arrows.value.push({
       start: { x: startX.value, y: startY.value },
       end: { x: endX.value, y: endY.value },
-      color: 'red',
+      color: currentArrowColor.value,
     })
   }
   isDrawingArrow.value = false
@@ -220,43 +235,39 @@ onMounted(() => {
 }
 
 .chessboard-hidden {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(255, 255, 255, 0);
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  position: absolute;
   grid-template-rows: repeat(8, 1fr);
+  grid-template-columns: repeat(8, 1fr);
+  background-color: rgba(255, 255, 255, 0);
 }
 
 .square {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
   width: 100%;
   height: 100%;
+  display: flex;
   cursor: pointer;
+  position: relative;
+  align-items: center;
+  justify-content: center;
 }
 
 .piece {
-  position: absolute;
   width: 100%;
   height: 100%;
   display: flex;
-  justify-content: center;
+  position: absolute;
   align-items: center;
+  justify-content: center;
 }
 
 .arrow {
-  position: absolute;
-  pointer-events: none;
-  top: 0;
-  left: 0;
+  z-index: 1;
   width: 100%;
   height: 100%;
-  z-index: 1;
+  position: absolute;
+  pointer-events: none;
 }
 </style>
