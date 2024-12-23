@@ -17,11 +17,12 @@
           :class="{
             'king-check': getKingInCheck(square),
             'last-move': lastMoveInfo.from === square || lastMoveInfo.to === square,
+            'selected-square': selectedSquare === square,
           }"
           @drop="dropPiece(square)"
           @dragover.prevent
         >
-          <p>{{ square }}</p>
+          <!-- <p>{{ square }}</p> -->
           <div
             v-if="pieces[square]"
             class="piece"
@@ -31,6 +32,8 @@
           >
             <img :src="getPieceImage(pieces[square])" alt="piece" />
           </div>
+          <!-- Highlighting legal moves -->
+          <div v-if="legalMoves.includes(square)" class="legal-moves"></div>
         </div>
         <!-- Chessboard ends -->
 
@@ -111,6 +114,7 @@ const selectedSquare = ref(null)
 const fen = ref(DEFAULT_POSITION)
 const chess = new Chess()
 const isFlipped = ref(false)
+const legalMoves = ref([])
 const lastMoveInfo = ref({
   from: null,
   to: null,
@@ -190,6 +194,7 @@ const flipBoard = () => {
 
 const startDrag = (square) => {
   selectedSquare.value = square
+  legalMoves.value = chess.moves({ square, verbose: true }).map((move) => move.to)
 }
 
 const endDrag = () => {
@@ -197,6 +202,7 @@ const endDrag = () => {
   isDrawingArrow.value = false
   currentArrow.value = { start: null, end: null, color: null }
   arrows.value = []
+  legalMoves.value = []
 }
 
 const dropPiece = (targetSquare) => {
@@ -362,5 +368,20 @@ onMounted(() => {
 
 .last-move {
   background-color: rgba(155, 199, 0, 0.41);
+}
+
+.selected-square {
+  background-color: rgba(20, 85, 30, 0.5);
+}
+
+.legal-moves {
+  position: absolute;
+  width: 30%;
+  height: 30%;
+  border-radius: 50%;
+  background-color: rgba(0, 128, 0, 0.8);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 </style>
