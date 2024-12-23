@@ -64,7 +64,7 @@
             :x2="endX"
             :y2="endY"
             stroke-width="10"
-            :stroke="currentArrowColor"
+            :stroke="currentArrow.color"
             fill="none"
             opacity="0.7"
             marker-end="url(#arrowhead-temp)"
@@ -78,7 +78,7 @@
             markerHeight="2.5"
             orient="auto"
           >
-            <polygon points="0.3 0, 2 1.25, 0.3 2.5" :fill="currentArrowColor" />
+            <polygon points="0.3 0, 2 1.25, 0.3 2.5" :fill="currentArrow.color" />
           </marker>
         </svg>
       </div>
@@ -99,7 +99,7 @@ const startY = ref(null)
 const endX = ref(null)
 const endY = ref(null)
 const arrows = ref([])
-const currentArrowColor = ref(null)
+const currentArrow = ref({ start: null, end: null, color: null })
 const chessboard = ref(null)
 const pieces = ref({})
 const selectedSquare = ref(null)
@@ -175,11 +175,11 @@ const dropPiece = (targetSquare) => {
 const startDrawing = (event) => {
   if (event.button === 2) {
     isDrawingArrow.value = true
-    if (event.altKey && event.shiftKey) currentArrowColor.value = colors.altShift
-    else if (event.ctrlKey) currentArrowColor.value = colors.ctrl
-    else if (event.shiftKey) currentArrowColor.value = colors.shift
-    else if (event.altKey) currentArrowColor.value = colors.alt
-    else currentArrowColor.value = colors.ctrl
+    if (event.altKey && event.shiftKey) currentArrow.value.color = colors.altShift
+    else if (event.ctrlKey) currentArrow.value.color = colors.ctrl
+    else if (event.shiftKey) currentArrow.value.color = colors.shift
+    else if (event.altKey) currentArrow.value.color = colors.alt
+    else currentArrow.value.color = colors.ctrl
 
     const rect = chessboard.value.getBoundingClientRect()
     startX.value = event.clientX - rect.left
@@ -187,21 +187,35 @@ const startDrawing = (event) => {
 
     endX.value = startX.value
     endY.value = startY.value
+
+    currentArrow.value = {
+      start: { x: startX.value, y: startY.value },
+      end: { x: endX.value, y: endY.value },
+      color: currentArrow.value.color,
+    }
   }
 }
 
 const stopDrawing = () => {
-  if (
-    isDrawingArrow.value &&
-    endX.value !== null &&
-    endY.value !== null &&
-    currentArrowColor.value !== null
-  ) {
-    arrows.value.push({
-      start: { x: startX.value, y: startY.value },
-      end: { x: endX.value, y: endY.value },
-      color: currentArrowColor.value,
-    })
+  if (isDrawingArrow.value) {
+    const existingArrowIndex = arrows.value.findIndex(
+      (arrow) =>
+        arrow.color === currentArrow.value.color &&
+        arrow.start.x === currentArrow.value.start.x &&
+        arrow.start.y === currentArrow.value.start.y &&
+        arrow.end.x === currentArrow.value.end.x &&
+        arrow.end.y === currentArrow.value.end.y,
+    )
+    if (existingArrowIndex !== -1) {
+      // Remove the existing arrow of the same color and position
+      arrows.value.splice(existingArrowIndex, 1)
+    } else {
+      arrows.value.push({
+        start: { x: startX.value, y: startY.value },
+        end: { x: endX.value, y: endY.value },
+        color: currentArrow.value.color,
+      })
+    }
   }
   isDrawingArrow.value = false
   startX.value = null
