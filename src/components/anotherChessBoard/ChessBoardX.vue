@@ -14,6 +14,10 @@
           v-for="square in squares"
           :key="square"
           class="square"
+          :class="{
+            'king-check': getKingInCheck(square),
+            'last-move': lastMoveInfo.from === square || lastMoveInfo.to === square,
+          }"
           @drop="dropPiece(square)"
           @dragover.prevent
         >
@@ -107,6 +111,16 @@ const selectedSquare = ref(null)
 const fen = ref(DEFAULT_POSITION)
 const chess = new Chess()
 const isFlipped = ref(false)
+const lastMoveInfo = ref({
+  from: null,
+  to: null,
+  piece: null,
+  color: null,
+  san: null,
+  before: null,
+  after: null,
+  flag: null,
+})
 
 const squares = computed(() => {
   return isFlipped.value ? SQUARES.slice().reverse() : SQUARES
@@ -127,17 +141,41 @@ const setFen = (fenString) => {
 
 // Convert the FEN string into pieces on the chessboard
 const updatePieces = () => {
+  // Updates pieces state by mapping the chess board, creating an object for each square with a piece,
+  // and filters out squares without pieces, reducing it into a single object containing all pieces.
+
   const board = chess.board()
-  const piecesObj = {}
-  board.forEach((row, rowIndex) => {
-    row.forEach((square, colIndex) => {
-      if (square) {
-        const squareId = SQUARES[rowIndex * 8 + colIndex]
-        piecesObj[squareId] = square
-      }
-    })
-  })
-  pieces.value = piecesObj
+  pieces.value = board
+    .flatMap((row, rowIndex) =>
+      row.map((square, colIndex) => {
+        if (square) {
+          const squareId = SQUARES[rowIndex * 8 + colIndex]
+          return { [squareId]: square }
+        }
+        return null
+      }),
+    )
+    .filter(Boolean)
+    .reduce((accumulator, current) => ({ ...accumulator, ...current }), {})
+}
+
+// Function to get locations of given piece by name and color
+const getPieceLocations = (color, type) => {
+  const board = chess.board()
+  const pieces = board
+    .flat()
+    .filter((square) => square !== null && square.color === color && square.type === type)
+
+  return pieces.map((piece) => piece.square)
+}
+
+// Function to get the opponent's king's position when in check
+const getKingInCheck = (square) => {
+  if (chess.isCheck()) {
+    const kingPosition = getPieceLocations(chess.turn(), 'k')[0]
+    return kingPosition === square
+  }
+  return false
 }
 
 const getPieceImage = (piece) => {
@@ -170,6 +208,16 @@ const dropPiece = (targetSquare) => {
 
     if (move) {
       updatePieces()
+      lastMoveInfo.value = {
+        from: move.from,
+        to: move.to,
+        piece: move.piece,
+        color: move.color,
+        san: move.san,
+        before: move.before,
+        after: move.after,
+        flag: move.flags,
+      }
     }
     endDrag()
   }
@@ -299,5 +347,20 @@ onMounted(() => {
   height: 100%;
   position: absolute;
   pointer-events: none;
+}
+
+.king-check {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 0, 0, 1) 0%,
+    rgba(231, 0, 0, 1) 25%,
+    rgba(221, 0, 0, 1) 45%,
+    rgba(169, 0, 0, 0) 80%,
+    rgba(158, 0, 0, 0) 100%
+  );
+}
+
+.last-move {
+  background-color: rgba(155, 199, 0, 0.41);
 }
 </style>
