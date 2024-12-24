@@ -91,6 +91,12 @@
         </svg>
       </div>
     </div>
+    <PawnPromotionDialog
+      :isVisible="isPromotionVisible"
+      :promotePawn="promotePawn"
+      :playerTurn="chess.turn()"
+    />
+    <ResultDialog :isVisible="isResultVisible" :result="resultMsg" />
     <button @click="flipBoard" class="mr-1 text-gray-600">
       <font-awesome-icon icon="fa-solid fa-repeat" />
     </button>
@@ -100,6 +106,8 @@
 <script setup>
 import { Chess, DEFAULT_POSITION, SQUARES } from 'chess.js'
 import { computed, onMounted, ref } from 'vue'
+import PawnPromotionDialog from './PawnPromotionDialog.vue'
+import ResultDialog from './ResultDialog.vue'
 
 const isDrawingArrow = ref(false)
 const startX = ref(null)
@@ -111,10 +119,16 @@ const currentArrow = ref({ start: null, end: null, color: null })
 const chessboard = ref(null)
 const pieces = ref({})
 const selectedSquare = ref(null)
-const fen = ref(DEFAULT_POSITION)
+// const fen = ref(DEFAULT_POSITION)
+const fen = ref('6k1/5pp1/7p/1PR5/8/6P1/pPpr1r1P/6K1 b - - 0 28')
 const chess = new Chess()
 const isFlipped = ref(false)
 const legalMoves = ref([])
+const isPromotionVisible = ref(false)
+const promotionToSquare = ref(null)
+const promotionFromSquare = ref(null)
+const isResultVisible = ref(false)
+const resultMsg = ref('')
 const lastMoveInfo = ref({
   from: null,
   to: null,
@@ -207,12 +221,21 @@ const endDrag = () => {
 
 const dropPiece = (targetSquare) => {
   if (selectedSquare.value) {
-    const move = chess.move({
-      from: selectedSquare.value,
-      to: targetSquare,
-    })
-
-    if (move) {
+    const validMove = chess
+      .moves({ square: selectedSquare.value, verbose: true })
+      .find((move) => move.to === targetSquare)
+    if (validMove) {
+      // Handle pawn promotion
+      if (validMove.piece === 'p' && (targetSquare[1] === '8' || targetSquare[1] === '1')) {
+        isPromotionVisible.value = true
+        promotionToSquare.value = targetSquare
+        promotionFromSquare.value = selectedSquare.value
+        return
+      }
+      const move = chess.move({
+        from: selectedSquare.value,
+        to: targetSquare,
+      })
       updatePieces()
       lastMoveInfo.value = {
         from: move.from,
@@ -224,6 +247,7 @@ const dropPiece = (targetSquare) => {
         after: move.after,
         flag: move.flags,
       }
+      checkGameResult()
     }
     endDrag()
   }
@@ -299,6 +323,56 @@ const drawArrow = (event) => {
 
   endX.value = (x + 0.5) * squareSize
   endY.value = (y + 0.5) * squareSize
+}
+
+const promotePawn = (piece) => {
+  const validMove = chess
+    .moves({ square: promotionFromSquare.value, verbose: true })
+    .find((move) => move.to === promotionToSquare.value)
+  if (validMove) {
+    const move = chess.move({
+      from: promotionFromSquare.value,
+      to: promotionToSquare.value,
+      promotion: piece,
+    })
+
+    updatePieces()
+    lastMoveInfo.value = {
+      from: move.from,
+      to: move.to,
+      piece: move.piece,
+      color: move.color,
+      san: move.san,
+      before: move.before,
+      after: move.after,
+      flag: move.flags,
+    }
+  }
+  isPromotionVisible.value = false
+  promotionFromSquare.value = null
+  promotionToSquare.value = null
+  endDrag()
+  checkGameResult()
+}
+
+const checkGameResult = () => {
+  if (chess.isGameOver()) {
+    const result = chess.isCheckmate()
+      ? `${chess.turn() === 'w' ? 'Black' : 'White'} wins by Checkmate!`
+      : chess.isStalemate()
+        ? 'Stalemate!'
+        : chess.isInsufficientMaterial()
+          ? 'Draw by Insufficient Material!'
+          : chess.isThreefoldRepetition()
+            ? 'Draw by 3-fold Repetition!'
+            : ''
+    showGameResultDialog(result)
+  }
+}
+
+const showGameResultDialog = (resultMessage) => {
+  resultMsg.value = resultMessage
+  isResultVisible.value = true
 }
 
 onMounted(() => {
