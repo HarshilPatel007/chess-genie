@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col">
+  <div class="flex flex-col border border-red-500">
     <!-- Chessboard start -->
     <div
       class="chessboard"
@@ -90,6 +90,7 @@
           </g>
         </svg>
       </div>
+      <BoardEditor v-if="showEditor" @loadFEN="setFen" />
     </div>
     <PawnPromotionDialog
       :isVisible="isPromotionVisible"
@@ -97,9 +98,15 @@
       :playerTurn="chess.turn()"
     />
     <ResultDialog :isVisible="isResultVisible" :result="resultMsg" />
-    <button @click="flipBoard" class="mr-1 text-gray-600">
-      <font-awesome-icon icon="fa-solid fa-repeat" />
-    </button>
+
+    <div class="flex justify-end mt-10">
+      <button @click="showEditor = !showEditor" class="mr-1 text-gray-600">
+        <font-awesome-icon icon="fa-solid fa-chess-board" />
+      </button>
+      <button @click="flipBoard" class="mr-1 text-gray-600">
+        <font-awesome-icon icon="fa-solid fa-repeat" />
+      </button>
+    </div>
   </div>
 </template>
 
@@ -108,6 +115,9 @@ import { Chess, DEFAULT_POSITION, SQUARES } from 'chess.js'
 import { computed, onMounted, ref } from 'vue'
 import PawnPromotionDialog from './PawnPromotionDialog.vue'
 import ResultDialog from './ResultDialog.vue'
+import BoardEditor from './BoardEditor.vue'
+
+const showEditor = ref(false)
 
 const isDrawingArrow = ref(false)
 const startX = ref(null)

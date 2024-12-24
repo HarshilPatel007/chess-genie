@@ -1,8 +1,10 @@
 <template>
   <div v-if="isVisible" class="dialog-overlay" @mousedown.stop>
     <div class="result-dialog" @mousedown.stop>
-      <h1>Game Result</h1>
-      <p>{{ props.result }}</p>
+      <div class="flex flex-col justify-center items-center h-full">
+        <p>Result</p>
+        <p>{{ props.result }}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -31,5 +33,7 @@ const props = defineProps({
   transform: translate(-50%, -50%);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   border-radius: 5px;
+  width: 300px;
+  height: 200px;
 }
 </style>
