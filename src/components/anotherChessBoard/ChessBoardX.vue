@@ -112,16 +112,20 @@
       :promotePawn="promotePawn"
       :playerTurn="chess.turn()"
     />
-    <ResultDialog :isVisible="isResultVisible" :result="resultMsg" />
+    <ResultDialog :isVisible="isResultVisible" :result="resultMessage" />
 
     <div class="flex justify-end mt-10">
-      <button @click="togglePawnsStructure" class="mr-1 text-gray-600" title="Show Pawn Structure">
+      <button
+        @click="showPawnStructure = !showPawnStructure"
+        class="mr-1 text-gray-600"
+        title="Show Pawn Structure"
+      >
         <font-awesome-icon icon="fa-solid fa-chess-pawn" />
       </button>
       <button @click="showEditor = !showEditor" class="mr-1 text-gray-600" title="Board Editor">
         <font-awesome-icon icon="fa-solid fa-chess-board" />
       </button>
-      <button @click="flipBoard" class="mr-1 text-gray-600" title="Flip Chessboard">
+      <button @click="isFlipped = !isFlipped" class="mr-1 text-gray-600" title="Flip Chessboard">
         <font-awesome-icon icon="fa-solid fa-repeat" />
       </button>
     </div>
@@ -154,7 +158,7 @@ const isPromotionVisible = ref(false)
 const promotionToSquare = ref(null)
 const promotionFromSquare = ref(null)
 const isResultVisible = ref(false)
-const resultMsg = ref('')
+const resultMessage = ref('')
 const squareHighlight = ref({})
 const showEditor = ref(false)
 const showPawnStructure = ref(false)
@@ -397,7 +401,7 @@ const promotePawn = (piece) => {
 
 const checkGameResult = () => {
   if (chess.isGameOver()) {
-    const result = chess.isCheckmate()
+    resultMessage.value = chess.isCheckmate()
       ? `${chess.turn() === 'w' ? 'Black' : 'White'} wins by Checkmate!`
       : chess.isStalemate()
         ? 'Stalemate!'
@@ -408,21 +412,8 @@ const checkGameResult = () => {
             : chess.isDrawByFiftyMoves()
               ? 'Draw by 50 Moves!'
               : ''
-    showGameResultDialog(result)
+    isResultVisible.value = true
   }
-}
-
-const showGameResultDialog = (resultMessage) => {
-  resultMsg.value = resultMessage
-  isResultVisible.value = true
-}
-
-const togglePawnsStructure = () => {
-  showPawnStructure.value = !showPawnStructure.value
-}
-
-const flipBoard = () => {
-  isFlipped.value = !isFlipped.value
 }
 
 onMounted(() => {
