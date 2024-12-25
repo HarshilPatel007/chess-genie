@@ -39,7 +39,7 @@
           </svg>
           <!-- <p>{{ square }}</p> -->
           <div
-            v-if="pieces[square]"
+            v-if="pieces[square] && (!showPawnStructure || pieces[square].type === 'p')"
             class="piece"
             draggable
             @dragstart="startDrag(square)"
@@ -115,10 +115,13 @@
     <ResultDialog :isVisible="isResultVisible" :result="resultMsg" />
 
     <div class="flex justify-end mt-10">
-      <button @click="showEditor = !showEditor" class="mr-1 text-gray-600">
+      <button @click="togglePawnsStructure" class="mr-1 text-gray-600" title="Show Pawn Structure">
+        <font-awesome-icon icon="fa-solid fa-chess-pawn" />
+      </button>
+      <button @click="showEditor = !showEditor" class="mr-1 text-gray-600" title="Board Editor">
         <font-awesome-icon icon="fa-solid fa-chess-board" />
       </button>
-      <button @click="flipBoard" class="mr-1 text-gray-600">
+      <button @click="flipBoard" class="mr-1 text-gray-600" title="Flip Chessboard">
         <font-awesome-icon icon="fa-solid fa-repeat" />
       </button>
     </div>
@@ -154,6 +157,7 @@ const isResultVisible = ref(false)
 const resultMsg = ref('')
 const squareHighlight = ref({})
 const showEditor = ref(false)
+const showPawnStructure = ref(false)
 
 const lastMoveInfo = ref({
   from: null,
@@ -240,10 +244,6 @@ const getPieceImage = (piece) => {
   const color = piece.color === 'w' ? 'w' : 'b'
   const pieceType = piece.type.toUpperCase()
   return `/pieces/cardinal/${color}${pieceType}.svg`
-}
-
-const flipBoard = () => {
-  isFlipped.value = !isFlipped.value
 }
 
 const startDrag = (square) => {
@@ -413,6 +413,14 @@ const checkGameResult = () => {
 const showGameResultDialog = (resultMessage) => {
   resultMsg.value = resultMessage
   isResultVisible.value = true
+}
+
+const togglePawnsStructure = () => {
+  showPawnStructure.value = !showPawnStructure.value
+}
+
+const flipBoard = () => {
+  isFlipped.value = !isFlipped.value
 }
 
 onMounted(() => {
