@@ -21,7 +21,22 @@
           }"
           @drop="dropPiece(square)"
           @dragover.prevent
+          @mousedown="handleSquareClick(square, $event)"
         >
+          <!-- Highlight Square -->
+          <svg v-if="squareHighlight[square]" class="highlight-square">
+            <rect
+              width="90%"
+              height="90%"
+              x="3"
+              y="3"
+              rx="10"
+              ry="10"
+              fill="none"
+              :stroke="squareHighlight[square].color"
+              stroke-width="2.5"
+            />
+          </svg>
           <!-- <p>{{ square }}</p> -->
           <div
             v-if="pieces[square]"
@@ -111,13 +126,11 @@
 </template>
 
 <script setup>
-import { Chess, DEFAULT_POSITION, SQUARES } from 'chess.js'
+import { Chess, SQUARES } from 'chess.js'
 import { computed, onMounted, ref } from 'vue'
+import BoardEditor from './BoardEditor.vue'
 import PawnPromotionDialog from './PawnPromotionDialog.vue'
 import ResultDialog from './ResultDialog.vue'
-import BoardEditor from './BoardEditor.vue'
-
-const showEditor = ref(false)
 
 const isDrawingArrow = ref(false)
 const startX = ref(null)
@@ -139,6 +152,9 @@ const promotionToSquare = ref(null)
 const promotionFromSquare = ref(null)
 const isResultVisible = ref(false)
 const resultMsg = ref('')
+const squareHighlight = ref({})
+const showEditor = ref(false)
+
 const lastMoveInfo = ref({
   from: null,
   to: null,
@@ -155,10 +171,24 @@ const squares = computed(() => {
 })
 
 const colors = {
-  ctrl: 'blue',
+  ctrl: 'teal',
   shift: 'red',
   alt: 'green',
-  altShift: 'yellow',
+  altShift: 'darkorange',
+}
+
+const handleSquareClick = (square, event) => {
+  const existingHighlight = squareHighlight.value[square]
+  const toggleHighlight = (color) => {
+    squareHighlight.value[square] = existingHighlight?.color === color ? null : { color }
+  }
+  if (event.button === 0) {
+    if (event.altKey && event.shiftKey) toggleHighlight(colors.altShift)
+    else if (event.altKey) toggleHighlight(colors.alt)
+    else if (event.ctrlKey) toggleHighlight(colors.ctrl)
+    else if (event.shiftKey) toggleHighlight(colors.shift)
+    else return
+  }
 }
 
 // Set the FEN string to update the board
@@ -270,7 +300,7 @@ const startDrawing = (event) => {
     else if (event.ctrlKey) currentArrow.value.color = colors.ctrl
     else if (event.shiftKey) currentArrow.value.color = colors.shift
     else if (event.altKey) currentArrow.value.color = colors.alt
-    else currentArrow.value.color = colors.ctrl
+    else currentArrow.value.color = colors.alt
 
     const rect = chessboard.value.getBoundingClientRect()
     const squareSize = rect.width / 8
@@ -458,14 +488,20 @@ onMounted(() => {
   background-color: rgba(20, 85, 30, 0.5);
 }
 
-.legal-moves {
+.highlight-square {
+  width: 100%;
+  height: 100%;
   position: absolute;
-  width: 30%;
-  height: 30%;
-  border-radius: 50%;
-  background-color: rgba(0, 128, 0, 0.8);
+}
+
+.legal-moves {
   top: 50%;
   left: 50%;
+  width: 30%;
+  height: 30%;
+  position: absolute;
+  border-radius: 50%;
   transform: translate(-50%, -50%);
+  background-color: rgba(0, 128, 0, 0.8);
 }
 </style>

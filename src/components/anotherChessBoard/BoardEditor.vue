@@ -31,12 +31,6 @@
           readonly
           class="w-[380px] border my-1 focus:bg-none border-black focus:outline-none rounded-sm"
         />
-        <!-- <button
-          class="text-gray-600 border my-1 ml-1 border-gray-600 focus:outline-none font-medium rounded-sm text-sm w-10"
-          @click="loadFEN"
-        >
-          load
-        </button> -->
       </div>
     </div>
 
