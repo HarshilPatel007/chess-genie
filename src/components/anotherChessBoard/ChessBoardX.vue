@@ -405,7 +405,9 @@ const checkGameResult = () => {
           ? 'Draw by Insufficient Material!'
           : chess.isThreefoldRepetition()
             ? 'Draw by 3-fold Repetition!'
-            : ''
+            : chess.isDrawByFiftyMoves()
+              ? 'Draw by 50 Moves!'
+              : ''
     showGameResultDialog(result)
   }
 }
