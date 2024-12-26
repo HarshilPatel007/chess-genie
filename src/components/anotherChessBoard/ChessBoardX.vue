@@ -1,112 +1,127 @@
 <template>
   <div class="flex flex-col border border-red-500">
     <!-- Chessboard start -->
-    <div
-      class="chessboard"
-      ref="chessboard"
-      @mousedown="startDrawing"
-      @mouseup="stopDrawing"
-      @mousemove="drawArrow"
-      @contextmenu.prevent
-    >
-      <div class="chessboard-hidden" ref="chessboard-hidden">
-        <div
-          v-for="square in squares"
-          :key="square"
-          class="square"
-          :class="{
-            'king-check': getKingInCheck(square),
-            'last-move': lastMoveInfo.from === square || lastMoveInfo.to === square,
-            'selected-square': selectedSquare === square,
-          }"
-          @drop="dropPiece(square)"
-          @dragover.prevent
-          @mousedown="handleSquareClick(square, $event)"
-        >
-          <!-- Highlight Square -->
-          <svg v-if="squareHighlight[square]" class="highlight-square">
-            <rect
-              width="90%"
-              height="90%"
-              x="3"
-              y="3"
-              rx="10"
-              ry="10"
-              fill="none"
-              :stroke="squareHighlight[square].color"
-              stroke-width="2.5"
-            />
-          </svg>
-          <!-- <p>{{ square }}</p> -->
-          <div
-            v-if="pieces[square] && (!showPawnStructure || pieces[square].type === 'p')"
-            class="piece"
-            draggable
-            @dragstart="startDrag(square)"
-            @dragend="endDrag"
-          >
-            <img :src="getPieceImage(pieces[square])" alt="piece" />
+    <div class="chessboard-container">
+      <!-- Chessboard -->
+      <div
+        class="chessboard"
+        ref="chessboard"
+        @mousedown="startDrawing"
+        @mouseup="stopDrawing"
+        @mousemove="drawArrow"
+        @contextmenu.prevent
+      >
+        <!-- File labels (a-h) -->
+        <div class="file-labels">
+          <div v-for="(file, index) in fileLabels" :key="index" class="file-label">
+            {{ file }}
           </div>
-          <!-- Highlighting legal moves -->
-          <div v-if="legalMoves.includes(square)" class="legal-moves"></div>
         </div>
-        <!-- Chessboard ends -->
+        <!-- Rank labels (1-8) -->
+        <div class="rank-labels">
+          <div v-for="(rank, index) in rankLabels" :key="index" class="rank-label">
+            {{ rank }}
+          </div>
+        </div>
 
-        <!-- Arrows -->
-        <svg ref="svg" class="arrow">
-          <g v-for="(arrow, index) in arrows" :key="index">
-            <marker
-              :id="`arrowhead-${index}`"
-              refX="1.25"
-              refY="1.25"
-              markerWidth="2"
-              markerHeight="2.5"
-              orient="auto"
+        <div class="chessboard-hidden" ref="chessboard-hidden">
+          <div
+            v-for="square in squares"
+            :key="square"
+            class="square"
+            :class="{
+              'king-check': getKingInCheck(square),
+              'last-move': lastMoveInfo.from === square || lastMoveInfo.to === square,
+              'selected-square': selectedSquare === square,
+            }"
+            @drop="dropPiece(square)"
+            @dragover.prevent
+            @mousedown="handleSquareClick(square, $event)"
+          >
+            <!-- Highlight Square -->
+            <svg v-if="squareHighlight[square]" class="highlight-square">
+              <rect
+                width="90%"
+                height="90%"
+                x="3"
+                y="3"
+                rx="10"
+                ry="10"
+                fill="none"
+                :stroke="squareHighlight[square].color"
+                stroke-width="2.5"
+              />
+            </svg>
+            <!-- <p class="square-coordinates">{{ square }}</p> -->
+            <div
+              v-if="pieces[square] && (!showPawnStructure || pieces[square].type === 'p')"
+              class="piece"
+              draggable
+              @dragstart="startDrag(square)"
+              @dragend="endDrag"
             >
-              <polygon points="0.3 0, 2 1.25, 0.3 2.5" :fill="arrow.color" />
-            </marker>
-            <line
-              :x1="arrow.start.x"
-              :y1="arrow.start.y"
-              :x2="arrow.end.x"
-              :y2="arrow.end.y"
-              :marker-end="`url(#arrowhead-${index})`"
-              stroke-width="10"
-              :stroke="arrow.color"
-              fill="none"
-              opacity="0.7"
-            />
-          </g>
-
-          <!-- show temp arrow while drawing -->
-          <g v-if="isDrawingArrow">
-            <line
-              :x1="startX"
-              :y1="startY"
-              :x2="endX"
-              :y2="endY"
-              stroke-width="10"
-              :stroke="currentArrow.color"
-              fill="none"
-              opacity="0.7"
-              marker-end="url(#arrowhead-temp)"
-            />
-
-            <marker
-              id="arrowhead-temp"
-              refX="1.25"
-              refY="1.25"
-              markerWidth="2"
-              markerHeight="2.5"
-              orient="auto"
-            >
-              <polygon points="0.3 0, 2 1.25, 0.3 2.5" :fill="currentArrow.color" />
-            </marker>
-          </g>
-        </svg>
+              <img :src="getPieceImage(pieces[square])" alt="piece" />
+            </div>
+            <!-- Highlighting legal moves -->
+            <div v-if="legalMoves.includes(square)" class="legal-moves"></div>
+          </div>
+        </div>
       </div>
-      <BoardEditor v-if="showEditor" @loadFEN="setFen" />
+      <!-- Chessboard ends -->
+
+      <!-- Arrows -->
+      <svg ref="svg" class="arrow">
+        <g v-for="(arrow, index) in arrows" :key="index">
+          <marker
+            :id="`arrowhead-${index}`"
+            refX="1.25"
+            refY="1.25"
+            markerWidth="2"
+            markerHeight="2.5"
+            orient="auto"
+          >
+            <polygon points="0.3 0, 2 1.25, 0.3 2.5" :fill="arrow.color" />
+          </marker>
+          <line
+            :x1="arrow.start.x"
+            :y1="arrow.start.y"
+            :x2="arrow.end.x"
+            :y2="arrow.end.y"
+            :marker-end="`url(#arrowhead-${index})`"
+            stroke-width="10"
+            :stroke="arrow.color"
+            fill="none"
+            opacity="0.7"
+          />
+        </g>
+
+        <!-- show temp arrow while drawing -->
+        <g v-if="isDrawingArrow">
+          <line
+            :x1="startX"
+            :y1="startY"
+            :x2="endX"
+            :y2="endY"
+            stroke-width="10"
+            :stroke="currentArrow.color"
+            fill="none"
+            opacity="0.7"
+            marker-end="url(#arrowhead-temp)"
+          />
+          <marker
+            id="arrowhead-temp"
+            refX="1.25"
+            refY="1.25"
+            markerWidth="2"
+            markerHeight="2.5"
+            orient="auto"
+          >
+            <polygon points="0.3 0, 2 1.25, 0.3 2.5" :fill="currentArrow.color" />
+          </marker>
+        </g>
+      </svg>
     </div>
+    <BoardEditor v-if="showEditor" @loadFEN="setFen" />
     <PawnPromotionDialog
       :isVisible="isPromotionVisible"
       :promotePawn="promotePawn"
@@ -162,6 +177,14 @@ const resultMessage = ref('')
 const squareHighlight = ref({})
 const showEditor = ref(false)
 const showPawnStructure = ref(false)
+const files = ref('abcdefgh')
+const ranks = ref('12345678')
+const fileLabels = computed(() => {
+  return isFlipped.value ? files.value.split('').reverse() : files.value.split('')
+})
+const rankLabels = computed(() => {
+  return isFlipped.value ? ranks.value.split('') : ranks.value.split('').reverse()
+})
 
 const lastMoveInfo = ref({
   from: null,
@@ -422,6 +445,14 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.chessboard-container {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
 .chessboard {
   width: 400px;
   height: 400px;
@@ -431,6 +462,40 @@ onMounted(() => {
   background-position: center;
   background-repeat: no-repeat;
   background-image: url('../../public/chessboard/brown.png');
+}
+
+.chessboard .file-labels {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  position: absolute;
+  bottom: -1px;
+  left: 20px;
+}
+
+.chessboard .file-label {
+  flex: 1;
+  text-align: center;
+  font-size: calc(15px);
+  font-weight: lighter;
+}
+
+.chessboard .rank-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  position: absolute;
+  top: -3px;
+  right: 0;
+  z-index: 10;
+}
+
+.chessboard .rank-label {
+  height: 12.5%;
+  text-align: center;
+  font-size: calc(15px);
+  font-weight: lighter;
 }
 
 .chessboard-hidden {
@@ -451,6 +516,16 @@ onMounted(() => {
   position: relative;
   align-items: center;
   justify-content: center;
+}
+
+.square-coordinates {
+  position: absolute;
+  top: 0.5px;
+  right: 0.5px;
+  font-size: 14px;
+  font-weight: lighter;
+  pointer-events: none;
+  user-select: none;
 }
 
 .piece {
