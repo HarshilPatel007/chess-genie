@@ -130,6 +130,18 @@
     <ResultDialog :isVisible="isResultVisible" :result="resultMessage" />
 
     <div class="flex justify-end mt-10">
+      <button @click="goToFirstMove" class="mr-1 text-gray-600" title="Go To First Move">
+        <font-awesome-icon icon="fa-solid fa-angles-left" />
+      </button>
+      <button @click="goBackMove" class="mr-1 text-gray-600" title="Navigate To Back">
+        <font-awesome-icon icon="fa-solid fa-angle-left" />
+      </button>
+      <button @click="goForwardMove" class="mr-1 text-gray-600" title="Navigate To Forward">
+        <font-awesome-icon icon="fa-solid fa-angle-right" />
+      </button>
+      <button @click="goToLastMove" class="mr-1 text-gray-600" title="Go To Last Move">
+        <font-awesome-icon icon="fa-solid fa-angles-right" />
+      </button>
       <button
         @click="showPawnStructure = !showPawnStructure"
         class="mr-1 text-gray-600"
@@ -141,7 +153,7 @@
         <font-awesome-icon icon="fa-solid fa-chess-board" />
       </button>
       <button @click="isFlipped = !isFlipped" class="mr-1 text-gray-600" title="Flip Chessboard">
-        <font-awesome-icon icon="fa-solid fa-repeat" />
+        <font-awesome-icon icon="fa-solid fa-arrows-rotate" />
       </button>
     </div>
   </div>
@@ -177,13 +189,18 @@ const resultMessage = ref('')
 const squareHighlight = ref({})
 const showEditor = ref(false)
 const showPawnStructure = ref(false)
-const files = ref('abcdefgh')
-const ranks = ref('12345678')
+
+const moveHistory = ref([])
+const historyIndex = ref(-1)
+const isNavigating = computed(
+  () => historyIndex.value >= 0 && historyIndex.value < moveHistory.value.length - 1,
+)
+
 const fileLabels = computed(() => {
-  return isFlipped.value ? files.value.split('').reverse() : files.value.split('')
+  return isFlipped.value ? 'abcdefgh'.split('').reverse() : 'abcdefgh'.split('')
 })
 const rankLabels = computed(() => {
-  return isFlipped.value ? ranks.value.split('') : ranks.value.split('').reverse()
+  return isFlipped.value ? '12345678'.split('') : '12345678'.split('').reverse()
 })
 
 const lastMoveInfo = ref({
@@ -226,6 +243,49 @@ const handleSquareClick = (square, event) => {
 const setFen = (fenString) => {
   chess.load(fenString)
   updatePieces()
+}
+
+const goBackMove = () => {
+  let move = ''
+  if (historyIndex.value > 0) {
+    move = moveHistory.value[historyIndex.value]
+    setFen(move.before)
+    lastMoveInfo.value = move
+    historyIndex.value-- // Move one step back
+  } else if (historyIndex.value === 0) {
+    // If already at the first move
+    move = moveHistory.value[historyIndex.value]
+    setFen(move.before)
+    lastMoveInfo.value = move
+  }
+}
+
+const goForwardMove = () => {
+  let move
+  if (historyIndex.value < moveHistory.value.length - 1) {
+    // Ensure not exceeding the last move
+    move = moveHistory.value[historyIndex.value]
+    setFen(move.after)
+    lastMoveInfo.value = move
+    historyIndex.value++ // Move one step forward
+  } else if (historyIndex.value < moveHistory.value.length + 1) {
+    // If already at the last move
+    move = moveHistory.value[historyIndex.value]
+    setFen(move.after)
+    lastMoveInfo.value = move
+  }
+}
+
+const goToFirstMove = () => {
+  const move = moveHistory.value[0]
+  setFen(move.before)
+  lastMoveInfo.value = move
+}
+
+const goToLastMove = () => {
+  const move = moveHistory.value[moveHistory.value.length - 1]
+  setFen(move.after)
+  lastMoveInfo.value = move
 }
 
 // Convert the FEN string into pieces on the chessboard
@@ -287,6 +347,7 @@ const endDrag = () => {
 }
 
 const dropPiece = (targetSquare) => {
+  if (isNavigating.value) return // Prevent move if navigating through history
   if (selectedSquare.value) {
     const validMove = chess
       .moves({ square: selectedSquare.value, verbose: true })
@@ -315,6 +376,9 @@ const dropPiece = (targetSquare) => {
         flag: move.flags,
       }
       checkGameResult()
+      // Update move history and reset index when setting FEN
+      moveHistory.value.push(lastMoveInfo.value)
+      historyIndex.value = moveHistory.value.length - 1
     }
     endDrag()
   }
