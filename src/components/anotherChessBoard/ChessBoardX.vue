@@ -191,7 +191,7 @@ const showEditor = ref(false)
 const showPawnStructure = ref(false)
 
 const moveHistory = ref([])
-const historyIndex = ref(-1)
+const historyIndex = ref(0)
 const isNavigating = computed(
   () => historyIndex.value >= 0 && historyIndex.value < moveHistory.value.length - 1,
 )
@@ -246,43 +246,32 @@ const setFen = (fenString) => {
 }
 
 const goBackMove = () => {
-  let move = ''
-  if (historyIndex.value > 0) {
-    move = moveHistory.value[historyIndex.value]
+  if (historyIndex.value >= 0) {
+    const move = moveHistory.value[historyIndex.value]
     setFen(move.before)
     lastMoveInfo.value = move
-    historyIndex.value-- // Move one step back
-  } else if (historyIndex.value === 0) {
-    // If already at the first move
-    move = moveHistory.value[historyIndex.value]
-    setFen(move.before)
-    lastMoveInfo.value = move
+    if (historyIndex.value > 0) historyIndex.value-- // Move one step back
   }
 }
 
 const goForwardMove = () => {
-  let move
-  if (historyIndex.value < moveHistory.value.length - 1) {
-    // Ensure not exceeding the last move
-    move = moveHistory.value[historyIndex.value]
+  if (historyIndex.value <= moveHistory.value.length - 1) {
+    const move = moveHistory.value[historyIndex.value]
     setFen(move.after)
     lastMoveInfo.value = move
-    historyIndex.value++ // Move one step forward
-  } else if (historyIndex.value < moveHistory.value.length + 1) {
-    // If already at the last move
-    move = moveHistory.value[historyIndex.value]
-    setFen(move.after)
-    lastMoveInfo.value = move
+    if (historyIndex.value < moveHistory.value.length - 1) historyIndex.value++ // Move one step forward
   }
 }
 
 const goToFirstMove = () => {
+  historyIndex.value = 0
   const move = moveHistory.value[0]
   setFen(move.before)
   lastMoveInfo.value = move
 }
 
 const goToLastMove = () => {
+  historyIndex.value = moveHistory.value.length - 1
   const move = moveHistory.value[moveHistory.value.length - 1]
   setFen(move.after)
   lastMoveInfo.value = move
