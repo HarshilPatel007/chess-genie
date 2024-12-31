@@ -129,7 +129,7 @@
     />
     <ResultDialog :isVisible="isResultVisible" :result="resultMessage" />
 
-    <div class="flex justify-end mt-10">
+    <div class="flex justify-end mt-10" @contextmenu.prevent>
       <button @click="goToFirstMove" class="mr-1 text-gray-600" title="Go To First Move">
         <font-awesome-icon icon="fa-solid fa-angles-left" />
       </button>
@@ -157,12 +157,14 @@
       </button>
     </div>
   </div>
+  <MoveHistory :moves="moveHistory" :onNavigate="navigateToMove" />
 </template>
 
 <script setup>
 import { Chess, SQUARES } from 'chess.js'
 import { computed, onMounted, ref } from 'vue'
 import BoardEditor from './BoardEditor.vue'
+import MoveHistory from './MoveHistory.vue'
 import PawnPromotionDialog from './PawnPromotionDialog.vue'
 import ResultDialog from './ResultDialog.vue'
 
@@ -192,6 +194,7 @@ const showPawnStructure = ref(false)
 
 const moveHistory = ref([])
 const historyIndex = ref(0)
+const activeMoveIndex = ref(null)
 const isNavigating = computed(
   () => historyIndex.value >= 0 && historyIndex.value < moveHistory.value.length - 1,
 )
@@ -212,6 +215,7 @@ const lastMoveInfo = ref({
   before: null,
   after: null,
   flag: null,
+  variations: [],
 })
 
 const squares = computed(() => {
@@ -275,6 +279,15 @@ const goToLastMove = () => {
   const move = moveHistory.value[moveHistory.value.length - 1]
   setFen(move.after)
   lastMoveInfo.value = move
+}
+
+const navigateToMove = (index) => {
+  const move = moveHistory.value[index]
+  if (move) {
+    lastMoveInfo.value = move
+    setFen(move.after)
+    activeMoveIndex.value = index
+  }
 }
 
 // Convert the FEN string into pieces on the chessboard
@@ -363,13 +376,18 @@ const dropPiece = (targetSquare) => {
         before: move.before,
         after: move.after,
         flag: move.flags,
+        variations: [],
       }
       checkGameResult()
-      // Update move history and reset index when setting FEN
-      moveHistory.value.push(lastMoveInfo.value)
-      historyIndex.value = moveHistory.value.length - 1
+      if (activeMoveIndex.value !== null) {
+        moveHistory.value[activeMoveIndex.value].variations.push(lastMoveInfo.value)
+      } else {
+        moveHistory.value.push(lastMoveInfo.value)
+        historyIndex.value = moveHistory.value.length - 1
+      }
     }
     endDrag()
+    console.log(moveHistory.value)
   }
 }
 
@@ -523,7 +541,7 @@ onMounted(() => {
   width: 100%;
   position: absolute;
   bottom: -1px;
-  left: 20px;
+  right: 20px;
 }
 
 .chessboard .file-label {

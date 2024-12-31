@@ -73,7 +73,7 @@
       </div>
 
       <!-- Combined turn and castling options -->
-      <div class="flex flex-col pr-2 bg-gray-500 rounded-sm mr-2 w-[130px] text-center mt-4">
+      <div class="flex flex-col pr-2 rounded-sm mr-2 w-[130px] text-center mt-4">
         <label>
           <input type="radio" value="black" v-model="turn" />
           black's turn
@@ -108,7 +108,7 @@
       </div>
 
       <button
-        class="text-gray-600 border my-1 ml-1 border-gray-600 focus:outline-none font-medium rounded-sm text-sm w-10"
+        class="text-gray-600 border my-1 ml-1 border-gray-600 focus:outline-none font-medium rounded-sm text-sm w-[115px]"
         @click="loadFEN"
       >
         load
@@ -119,7 +119,7 @@
 
 <script setup>
 import { SQUARES } from 'chess.js'
-import { ref, computed, defineEmits } from 'vue'
+import { computed, defineEmits, ref } from 'vue'
 const pieces = ref(['bP', 'bR', 'bN', 'bB', 'bQ', 'bK', 'wK', 'wQ', 'wB', 'wN', 'wR', 'wP'])
 const squares = SQUARES
 const boardState = ref({})
@@ -202,7 +202,9 @@ const generateFEN = computed(() => {
 
 // Separate pieces into black and white
 const blackPieces = computed(() => pieces.value.filter((piece) => piece.charAt(0) === 'b'))
-const whitePieces = computed(() => pieces.value.filter((piece) => piece.charAt(0) === 'w'))
+const whitePieces = computed(() =>
+  pieces.value.filter((piece) => piece.charAt(0) === 'w').reverse(),
+)
 </script>
 
 <style scoped>
