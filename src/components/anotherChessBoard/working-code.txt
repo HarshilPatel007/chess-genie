@@ -1,0 +1,50 @@
+const activeVariationIndex = ref(null) // To track the currently selected variation index
+
+const navigateToMove = (index) => {
+  if (index >= 0 && index < moveHistory.value.length) {
+    const move = moveHistory.value[index]
+    lastMoveInfo.value = move
+
+    // Update Fen based on whether we need to navigate into a variation
+    if (activeVariationIndex.value !== null && move.variations.length > 0) {
+      const variation = move.variations[activeVariationIndex.value]
+      setFen(variation.after)
+    } else {
+      setFen(move.after)
+    }
+
+    activeMoveIndex.value = index
+  }
+}
+
+// Function to navigate through variations
+const navigateVariation = (direction) => {
+  const currentMove = moveHistory.value[activeMoveIndex.value]
+  if (currentMove && currentMove.variations) {
+    if (direction === 'next') {
+      if (activeVariationIndex.value === null) {
+        activeVariationIndex.value = 0 // Start with the first variation
+      } else if (activeVariationIndex.value < currentMove.variations.length - 1) {
+        activeVariationIndex.value++
+      }
+    } else if (direction === 'previous') {
+      if (activeVariationIndex.value > 0) {
+        activeVariationIndex.value--
+      }
+    }
+
+    // Now set the board state based on the selected variation
+    if (activeVariationIndex.value !== null) {
+      const variation = currentMove.variations[activeVariationIndex.value]
+      setFen(variation.after) // Update the FEN to the selected variation state
+    }
+  }
+}
+
+const handleNextVariation = () => {
+  navigateVariation('next')
+}
+
+const handlePreviousVariation = () => {
+  navigateVariation('previous')
+}

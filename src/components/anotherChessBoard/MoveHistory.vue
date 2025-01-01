@@ -16,7 +16,7 @@
               <span v-for="(variation, varIndex) in move.variations" :key="varIndex">
                 <button
                   class="text-blue-500 underline hover:text-blue-700 focus:outline-none text-sm break-words mx-1"
-                  @click="navigateToMove(varIndex + index * 2)"
+                  @click="navigateToMove(index * 2 + moveIndex, varIndex)"
                 >
                   {{ variation.san }}
                 </button>
@@ -55,7 +55,7 @@ const formattedMoves = computed(() => {
   return result
 })
 
-const navigateToMove = (index) => {
-  props.onNavigate(index)
+const navigateToMove = (index, variationIndex = null) => {
+  props.onNavigate(index, variationIndex)
 }
 </script>

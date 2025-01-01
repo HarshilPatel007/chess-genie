@@ -281,11 +281,19 @@ const goToLastMove = () => {
   lastMoveInfo.value = move
 }
 
-const navigateToMove = (index) => {
-  const move = moveHistory.value[index]
-  if (move) {
+const navigateToMove = (index, variationIndex = null) => {
+  if (index >= 0 && index < moveHistory.value.length) {
+    const move = moveHistory.value[index]
     lastMoveInfo.value = move
-    setFen(move.after)
+
+    // If the move has variations and a variation index is provided
+    if (variationIndex !== null && move.variations && move.variations[variationIndex]) {
+      const variation = move.variations[variationIndex]
+      setFen(variation.after)
+    } else {
+      setFen(move.after)
+    }
+
     activeMoveIndex.value = index
   }
 }
